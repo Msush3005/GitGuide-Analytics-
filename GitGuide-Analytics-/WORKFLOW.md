@@ -17,7 +17,7 @@ Our team utilizes a structured feature-branch workflow to keep the production co
 ```
 
 ### Supported Branch Types
-- `feature/` - New analytical tasks or data pipeline capabilities (e.g., `feature/data-ingestion`, `feature/github-workflow-setup`)
+- `feature/` - New analytical tasks or data pipeline capabilities (e.g., `feature/data-ingestion`, `feature/github-workflow-setup`, `feature/python-workflow-script`)
 - `fix/` - Bug fixes and pipeline corrections (e.g., `fix/validation-logic`)
 - `docs/` - Documentation updates and user guides (e.g., `docs/data-dictionary`)
 - `refactor/` - Code restructures without functionality changes (e.g., `refactor/transformer-module`)
@@ -90,3 +90,38 @@ Sprint deliverables and bugs are tracked using GitHub Issues.
   - **Label(s)**: Categorized with relevant tags (e.g., `enhancement`, `data-pipeline`, `feature`, `documentation`).
   - **Assignee**: Explicitly assigned to the team member responsible for execution.
 - **Lifecycle Closure**: Issues are automatically closed when their linked PR is merged into `main` (via `Closes #X`).
+
+---
+
+## 5. Production Python Data Pipeline Script (`scripts/data_workflow.py`)
+
+Notebook-based exploration is converted into a modular, production-ready Python script to ensure automated execution, CI/CD compatibility, and clear maintainability.
+
+### How to Execute the Script
+Run the pipeline from the command line from the project root or from inside the `scripts/` directory:
+
+```bash
+# Execute from project root
+python scripts/data_workflow.py
+
+# Alternatively, execute from scripts directory
+cd scripts
+python data_workflow.py
+
+# Save execution output log
+python scripts/data_workflow.py > output/sample_run.txt
+```
+
+### Function Breakdown & Responsibilities
+- **`ingest_data(filepath)`**: Reads raw CSV or JSON datasets into a Pandas DataFrame. Verifies file existence and logs record counts.
+- **`process_data(df)`**: Applies transformations:
+  - Deduplication (`drop_duplicates()`).
+  - Numerical median imputation for null values.
+  - Categorical fallback string imputation.
+  - Feature engineering (`total_contributions = commits_count + pull_requests_opened`).
+- **`output_results(df, output_path)`**: Exports the cleaned DataFrame to CSV format, automatically creates parent directories if missing, and prints execution checkmark confirmations (`✓ Data successfully processed`).
+
+### How to Modify for New Datasets
+1. **Change Input File Path**: Update `input_file` in the `if __name__ == "__main__":` block to point to your new dataset (e.g., `data/raw/new_transactions.csv`).
+2. **Update Required Columns**: Modify column checks or feature engineering logic inside `process_data(df)` to match the target schema.
+3. **Change Output Location**: Update `output_file` (e.g., `output/transformed_metrics.csv`).
