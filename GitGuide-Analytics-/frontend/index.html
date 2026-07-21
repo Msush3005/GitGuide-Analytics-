@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitGuide Analytics - Contributor Dashboard</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h2>GitGuide</h2>
+          <span>Analytics Suite</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-item active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Dashboard Overview
+        </a>
+        <a href="#charts" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          Visual Analytics
+        </a>
+        <a href="#table-section" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3h18v18H3z"></path>
+            <path d="M3 9h18"></path>
+            <path d="M3 15h18"></path>
+            <path d="M9 3v18"></path>
+          </svg>
+          Contributor Table
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="pipeline-status">
+          <span class="status-dot green" id="statusDot"></span>
+          <div class="status-text">
+            <span class="status-title" id="statusTitle">Pipeline Active</span>
+            <span class="status-sub" id="lastUpdated">Updated just now</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <h1>Contributor Analytics Dashboard</h1>
+          <p class="subtitle">Real-time metrics, data validation, and contributor activity</p>
+        </div>
+
+        <div class="header-actions">
+          <div class="search-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search contributor ID, role, or repo..." />
+          </div>
+
+          <button class="btn btn-secondary" id="refreshBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh Data
+          </button>
+
+          <button class="btn btn-primary" id="runPipelineBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Run Pipeline
+          </button>
+        </div>
+      </header>
+
+      <!-- KPI Metrics Grid -->
+      <section class="kpi-grid" id="overview">
+        <div class="kpi-card purple">
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Contributions</span>
+            <h3 class="kpi-value" id="kpiTotalContributions">-</h3>
+            <span class="kpi-sub positive">Commits + Pull Requests</span>
+          </div>
+        </div>
+
+        <div class="kpi-card blue">
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="4"></circle>
+              <line x1="1.05" y1="12" x2="7" y2="12"></line>
+              <line x1="17" y1="12" x2="22.95" y2="12"></line>
+            </svg>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Commits</span>
+            <h3 class="kpi-value" id="kpiTotalCommits">-</h3>
+            <span class="kpi-sub">Across all repositories</span>
+          </div>
+        </div>
+
+        <div class="kpi-card emerald">
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="18" r="3"></circle>
+              <circle cx="6" cy="6" r="3"></circle>
+              <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+              <line x1="6" y1="9" x2="6" y2="21"></line>
+            </svg>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Pull Requests</span>
+            <h3 class="kpi-value" id="kpiTotalPRs">-</h3>
+            <span class="kpi-sub positive">Merged & Pending</span>
+          </div>
+        </div>
+
+        <div class="kpi-card amber">
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Active Contributors</span>
+            <h3 class="kpi-value" id="kpiActiveContributors">-</h3>
+            <span class="kpi-sub" id="kpiMaintainerCount">Maintainers & Contributors</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-grid" id="charts">
+        <div class="chart-card glass-panel wide">
+          <div class="chart-header">
+            <div>
+              <h3>Contributor Activity Breakdown</h3>
+              <p class="chart-sub">Commits vs. Pull Requests per contributor</p>
+            </div>
+            <span class="badge blue">Bar Chart</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="activityBarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card glass-panel">
+          <div class="chart-header">
+            <div>
+              <h3>Role Distribution</h3>
+              <p class="chart-sub">Team composition breakdown</p>
+            </div>
+            <span class="badge purple">Doughnut</span>
+          </div>
+          <div class="chart-body flex-center">
+            <canvas id="roleDoughnutChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Table Section -->
+      <section class="table-section glass-panel" id="table-section">
+        <div class="table-header">
+          <div class="table-title">
+            <h3>Processed Contributor Records</h3>
+            <p class="table-sub">Live transformed dataset output from <code>output/processed.csv</code></p>
+          </div>
+
+          <div class="table-filters">
+            <label for="roleFilter">Role:</label>
+            <select id="roleFilter" class="filter-select">
+              <option value="ALL">All Roles</option>
+              <option value="Maintainer">Maintainer</option>
+              <option value="Contributor">Contributor</option>
+              <option value="Reviewer">Reviewer</option>
+            </select>
+
+            <button class="btn btn-outline btn-sm" id="exportCsvBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Contributor ID</th>
+                <th>Repository</th>
+                <th>Role</th>
+                <th>Commits</th>
+                <th>Pull Requests</th>
+                <th>Total Contributions</th>
+                <th>Lines Changed</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td colspan="8" class="loading-row">Loading analytics dataset...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Pipeline Execution Terminal Modal -->
+  <div class="modal-backdrop" id="pipelineModal">
+    <div class="modal-box glass-panel">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="pulse-icon"></span>
+          <h3>Data Pipeline Execution Log</h3>
+        </div>
+        <button class="modal-close" id="closeModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="terminal-box" id="terminalOutput">
+          <p class="term-line info">Initialising Python data pipeline runner...</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="dismissModalBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic JS -->
+  <script src="app.js"></script>
+</body>
+</html>
