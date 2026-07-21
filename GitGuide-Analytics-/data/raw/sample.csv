@@ -1,0 +1,11 @@
+contributor_id,repository_name,commits_count,pull_requests_opened,lines_changed,contributor_role,timestamp
+101,GitGuide-Analytics-,12,3,450,Maintainer,2026-07-01 10:00:00
+102,GitGuide-Analytics-,5,1,120,Contributor,2026-07-01 11:30:00
+103,GitGuide-Analytics-,8,2,230,Contributor,2026-07-02 09:15:00
+101,GitGuide-Analytics-,12,3,450,Maintainer,2026-07-01 10:00:00
+104,GitGuide-Analytics-,,0,45,Reviewer,2026-07-02 14:00:00
+105,GitGuide-Analytics-,15,5,,Maintainer,2026-07-03 16:45:00
+106,GitGuide-Analytics-,3,,85,Contributor,2026-07-04 12:20:00
+107,GitGuide-Analytics-,20,7,890,Maintainer,2026-07-05 08:30:00
+102,GitGuide-Analytics-,5,1,120,Contributor,2026-07-01 11:30:00
+108,GitGuide-Analytics-,1,0,15,Contributor,2026-07-05 17:10:00
