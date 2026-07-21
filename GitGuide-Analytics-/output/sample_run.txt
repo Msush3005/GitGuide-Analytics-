@@ -1,0 +1,5 @@
+Loaded raw dataset from 'C:\Users\prasa\OneDrive\Desktop\GitGuide-Analytics-\data\raw\sample.csv' (Rows: 10, Columns: 7)
+Cleaned dataset: Removed 2 duplicate row(s).
+✓ Data successfully processed
+✓ Rows processed: 8
+✓ Output saved to C:\Users\prasa\OneDrive\Desktop\GitGuide-Analytics-\output\processed.csv
