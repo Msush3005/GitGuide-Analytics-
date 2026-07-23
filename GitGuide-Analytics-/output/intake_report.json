@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-23T13:19:18.686249",
+  "timestamp": "2026-07-23T13:41:18.710289",
   "filepath": "C:\\Users\\prasa\\OneDrive\\Desktop\\GitGuide-Analytics-\\data\\raw\\sample.csv",
   "validations": {
     "file_exists": "File exists and has content",
@@ -11,6 +11,6 @@
     "rows": 3,
     "columns": 4,
     "file_size_mb": 0.00015,
-    "bytes": 157
+    "bytes": 161
   }
 }

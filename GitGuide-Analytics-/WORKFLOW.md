@@ -158,3 +158,30 @@ This will read the raw dataset from `data/raw/sample.csv`, run the checks, and s
 1. **Change Expected Columns**: Update the `EXPECTED_COLUMNS` list at the top of `scripts/validate_intake.py` to match the schema of your new raw data.
 2. **Configure Paths**: Update `sample_file` in the main execution block to point to the new raw data source path.
 
+---
+
+## 7. Multi-Format Data Ingestion (`scripts/ingest_data.py`)
+
+This module enables robust ingestion of raw business datasets in multiple formats (CSVs with varying delimiters/encodings, structured JSON, flattened/nested files) into Pandas DataFrames.
+
+### How to Execute the Ingestion Script
+Run the ingestion script from the project root:
+
+```bash
+python scripts/ingest_data.py
+```
+
+This loads raw files from `data/raw/customers.csv` and `data/raw/transactions.json`, processes them, and saves the cleaned tabular results into the `data/processed/` folder.
+
+### Function Breakdown & Responsibilities
+- **`ingest_csv(filepath, delimiter, encoding, dtype_dict)`**: Loads a CSV file using explicit, documented parsing arguments. Handles FileNotFoundError and logs dimensions.
+- **`ingest_json(filepath, is_nested)`**: Loads a JSON file. If `is_nested=True`, it uses `pd.json_normalize()` to flatten nested structures (e.g., `{'info': {'name': 'Alice'}}` becomes column `info.name`).
+- **`ingest_csv_with_fallback(filepath, delimiters, fallback_encodings)`**: Sequentially attempts combinations of separators (e.g. `,`, `;`, `\t`) and character sets (e.g. `utf-8`, `latin-1`, `cp1252`) if default decoding fails.
+- **`document_ingestion(df, source_file)`**: Prints an audit log report for the team, documenting rows, columns, column data types, missing/null counts, and a 3-row preview.
+
+### How to Modify for New Datasets
+1. **Add Ingestion Steps**: Add new calls to `ingest_csv` or `ingest_json` in the script's `__main__` execution block.
+2. **Configure File Paths**: Set the raw input paths and processed output target folders.
+3. **Specify Data Types**: Create a `dtype_dict` mapping column names to target pandas datatypes (e.g. `{'customer_id': 'int64'}`) to ensure consistent database keys.
+
+
