@@ -125,3 +125,36 @@ python scripts/data_workflow.py > output/sample_run.txt
 1. **Change Input File Path**: Update `input_file` in the `if __name__ == "__main__":` block to point to your new dataset (e.g., `data/raw/new_transactions.csv`).
 2. **Update Required Columns**: Modify column checks or feature engineering logic inside `process_data(df)` to match the target schema.
 3. **Change Output Location**: Update `output_file` (e.g., `output/transformed_metrics.csv`).
+
+---
+
+## 6. Dataset Intake Validation (`scripts/validate_intake.py`)
+
+Before transforming any dataset, we run an intake validation check. This acts as a quality firewall, preventing corrupted or malformed data from entering our analytics pipeline and causing downstream failures.
+
+### Why Intake Validation Matters
+- **Quality Gatekeeper**: Catches schema changes, file formatting issues, empty files, or encoding anomalies early.
+- **Fail-Fast Design**: Stops execution immediately if foundational properties (e.g., file existence, extension) are missing.
+- **Audit Trail**: Generates a structured JSON validation report (`output/intake_report.json`) detailing pass/fail status and baseline statistics.
+
+### How to Execute the Script
+Run the validation script from the project root:
+
+```bash
+python scripts/validate_intake.py
+```
+
+This will read the raw dataset from `data/raw/sample.csv`, run the checks, and save the report to `output/intake_report.json`.
+
+### Function Breakdown & Responsibilities
+- **`validate_file_exists(filepath)`**: Verifies that the file exists and is not 0 bytes.
+- **`validate_file_format(filepath, allowed_formats)`**: Validates file extension against allowed formats (default: `csv`, `json`, `xlsx`).
+- **`validate_schema(df, expected_columns)`**: Checks if the file contains all expected columns, and flags any missing or extra columns.
+- **`detect_encoding(filepath)`**: Automatically detects file encoding with confidence using `chardet` to avoid decoding errors during file reads.
+- **`capture_dataset_stats(filepath, df)`**: Captures baseline dimensions like row count, column count, and file size in MB and bytes.
+- **`generate_intake_report(filepath, expected_columns)`**: Aggregates all validation steps and stats into a structured JSON report.
+
+### How to Adapt for New Datasets
+1. **Change Expected Columns**: Update the `EXPECTED_COLUMNS` list at the top of `scripts/validate_intake.py` to match the schema of your new raw data.
+2. **Configure Paths**: Update `sample_file` in the main execution block to point to the new raw data source path.
+
