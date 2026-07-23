@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-07-23T13:19:18.686249",
+  "filepath": "C:\\Users\\prasa\\OneDrive\\Desktop\\GitGuide-Analytics-\\data\\raw\\sample.csv",
+  "validations": {
+    "file_exists": "File exists and has content",
+    "format": "Format valid: csv",
+    "encoding": "Detected: ascii (confidence: 100.0%)",
+    "schema": "Schema valid: 4 columns present"
+  },
+  "statistics": {
+    "rows": 3,
+    "columns": 4,
+    "file_size_mb": 0.00015,
+    "bytes": 157
+  }
+}
