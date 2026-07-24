@@ -238,6 +238,25 @@ This reads the untyped data from `data/raw/untyped_data.csv`, converts dates, cu
 1. **Define Target Dtypes**: Modify parameters in the `__main__` execution block of `scripts/enforce_types.py`.
 2. **Add Custom Mapping**: Extend `convert_integers_to_boolean` if your new dataset introduces non-standard binary flags (e.g. `active`/`inactive`).
 
+---
+
+## 10. Data Dictionary Mapping & Maintenance Strategy
+
+This component establishes a single source of truth mapping technical data columns to stakeholder business definitions, KPI calculations, and structural relationships.
+
+### Documentation Files
+- **Data Dictionary CSV (`docs/data_dictionary.csv`)**: Tabular schema map listing technical formats, stakeholder descriptions, KPI contexts, and notes.
+- **Data Dictionary Guide (`docs/DATA_DICTIONARY.md`)**: Comprehensive Markdown guide documenting details, KPI formulas, ambiguous renaming justifications, and column relationship equations.
+
+### Maintenance Workflow for Future Updates
+When new columns or datasets are introduced in future releases:
+1. **Initiate Schema Review**: The product analyst or engineer proposes the new schema additions during design reviews.
+2. **Standardize Naming**: Resolve and document naming ambiguities using clear business labels instead of generic abbreviations.
+3. **Update Data Dictionary CSV**: Append new rows to `docs/data_dictionary.csv` defining types, descriptions, business meaning, and KPIs.
+4. **Update Data Dictionary Guide**: Add sections to `docs/DATA_DICTIONARY.md` describing update frequencies, null-handling strategies, and mathematical column relationships.
+5. **Periodic Audits**: Conduct quarterly reviews of the dictionary to ensure descriptions stay aligned with evolving CRM metrics.
+
+
 
 
 
