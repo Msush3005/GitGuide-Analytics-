@@ -1,0 +1,55 @@
+{
+  "customer_id": {
+    "column_type": "primary_identifier",
+    "null_count_before": 0,
+    "strategy": "drop_rows",
+    "business_reasoning": "Primary keys uniquely identify entities. Imputing a primary identifier creates invalid records and corrupts joins.",
+    "risk_assessment": "Low - required identifier"
+  },
+  "email": {
+    "column_type": "categorical_identifier",
+    "null_count_before": 2,
+    "strategy": "drop_rows",
+    "business_reasoning": "Email is critical for customer contact and marketing campaigns. Rows without email cannot be used for outreach. Data is incomplete.",
+    "risk_assessment": "Low - only affects small percentage of data"
+  },
+  "amount": {
+    "column_type": "numerical",
+    "null_count_before": 0,
+    "strategy": "median_imputation",
+    "value_used": 200.0,
+    "business_reasoning": "Median purchase amount is representative of typical transaction. Mean would be skewed by high-value outliers. Maintains distribution integrity.",
+    "risk_assessment": "Low - median is stable metric resistant to outliers"
+  },
+  "quantity": {
+    "column_type": "numerical",
+    "null_count_before": 1,
+    "strategy": "median_imputation",
+    "value_used": 6.5,
+    "business_reasoning": "Imputes standard median volume size to complete the dataset without skewing aggregate distribution.",
+    "risk_assessment": "Low"
+  },
+  "category": {
+    "column_type": "categorical",
+    "null_count_before": 0,
+    "strategy": "mode_imputation",
+    "value_used": "A",
+    "business_reasoning": "Fills categorical nulls with the most frequent category to represent the standard class.",
+    "risk_assessment": "Low"
+  },
+  "region": {
+    "column_type": "categorical",
+    "null_count_before": 2,
+    "strategy": "mode_imputation",
+    "value_used": "North",
+    "business_reasoning": "Fills categorical nulls with the most frequent region location.",
+    "risk_assessment": "Low"
+  },
+  "last_updated": {
+    "column_type": "datetime_series",
+    "null_count_before": 1,
+    "strategy": "forward_fill",
+    "business_reasoning": "For time-series analysis, forward fill preserves temporal continuity. Status typically does not change frequently.",
+    "risk_assessment": "Medium - assumes no change between observations"
+  }
+}
