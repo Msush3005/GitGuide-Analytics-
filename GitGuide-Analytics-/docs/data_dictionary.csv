@@ -1,0 +1,6 @@
+column_name,data_type,description,business_meaning,example_value,related_kpi,notes
+customer_id,Integer,Unique identifier for customer,Customer ID in CRM system,12456,Customer tracking,Primary key - never null
+trnx_amt,Float,Transaction amount in USD,Revenue earned from a single transaction,150.99,Monthly Revenue,Measured in USD
+purchase_date,Datetime,Date transaction occurred,Date when customer completed purchase,2025-01-15,Sales Velocity,Stored in UTC timezone
+cust_segment,String,Customer classification,Customer market segment (B2B/B2C/SMB),B2B,Segment Revenue,Updated monthly from CRM
+flag_churn,Integer,Binary churn indicator (0 or 1),Indicates whether customer churned within 90 days,0,Churn Rate,Used for retention analysis
