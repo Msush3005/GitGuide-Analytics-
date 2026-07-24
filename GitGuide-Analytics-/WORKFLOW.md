@@ -184,4 +184,60 @@ This loads raw files from `data/raw/customers.csv` and `data/raw/transactions.js
 2. **Configure File Paths**: Set the raw input paths and processed output target folders.
 3. **Specify Data Types**: Create a `dtype_dict` mapping column names to target pandas datatypes (e.g. `{'customer_id': 'int64'}`) to ensure consistent database keys.
 
+---
+
+## 8. Missing Value Imputation Strategy (`scripts/handle_missing.py`)
+
+This module manages missing data by analyzing null distributions and applying domain-appropriate imputation strategies. It guarantees that downstream mathematical calculations and model training run on complete datasets.
+
+### How to Execute the Imputation Script
+Run the imputation script from the project root:
+
+```bash
+python scripts/handle_missing.py
+```
+
+This reads the raw dataset from `data/raw/missing_data.csv`, treats missing values, generates a decision log at `output/imputation_decisions.json`, and exports the final cleaned dataset to `data/processed/cleaned_data.csv`.
+
+### Imputation Rules & Selection Criteria
+- **Row Dropping (`drop_rows_with_nulls`)**: Applied to critical key identifier columns (e.g. `customer_id`, `email`). Imputing identifiers introduces fake records and corrupts joins.
+- **Median/Mean Imputation (`impute_mean_median`)**: Applied to numerical columns (e.g. `amount`, `quantity`). Median is preferred for highly skewed distributions to prevent outlier bias.
+- **Mode Imputation (`impute_mode`)**: Applied to categorical columns (e.g. `category`, `region`), filling nulls with the most frequent value.
+- **Forward-Fill (`impute_forward_fill`)**: Applied to sequential/time-series data (e.g. `last_updated`), propagating the last known state forward.
+
+### Auditing & Validation
+- **Imputation Decisions Log (`output/imputation_decisions.json`)**: Tracks every column, strategy used, value imputed, and business reasoning for auditing.
+- **Comparison Validation Report**: Prints a terminal report detailing total rows before/after, rows removed, and final null percentages.
+
+### How to Customize for New Columns
+1. **Update Pipeline Calls**: Modify column parameters in the main execution block of `scripts/handle_missing.py`.
+2. **Update Imputation Decisions**: Add entries in the `document_imputation_decisions` function mapping columns to their business justification.
+
+---
+
+## 9. Data Type Standardization (`scripts/enforce_types.py`)
+
+This module enforces strict data types on raw datasets. Standardizing unstructured strings into clean datatypes prevents database join misalignments, numeric calculation errors, and parsing ambiguities.
+
+### How to Execute the Type Enforcement Script
+Run the script from the project root:
+
+```bash
+python scripts/enforce_types.py
+```
+
+This reads the untyped data from `data/raw/untyped_data.csv`, converts dates, currency formats, and boolean indicators, and saves the cleaned dataset to `data/processed/typed_data.csv`. It also writes a before/after audit report to `output/dtype_conversion_report.csv`.
+
+### Type Standardisation Rules & Functions
+- **Datetime Casting (`convert_string_dates_to_datetime`)**: Converts string representations to proper pandas datetimes. Always specify `date_format` to prevent date-parsing ambiguities (e.g. interpreting `01-02-2025` differently in US vs UK regions).
+- **Currency Cleaning (`convert_currency_to_float`)**: Strips formatting symbols like `$` and `,` from currency columns and casts variables to `float64`, enabling downstream mathematical aggregations.
+- **Boolean Flag Mapping (`convert_integers_to_boolean`)**: Maps integer binary flags (`0` and `1`) and text labels (`yes`, `no`, `true`, `false`) to native pandas booleans.
+- **Conversion Audit (`compare_dtypes`)**: Evaluates columns before/after, generating `output/dtype_conversion_report.csv` listing column changes.
+
+### How to Configure for New Columns
+1. **Define Target Dtypes**: Modify parameters in the `__main__` execution block of `scripts/enforce_types.py`.
+2. **Add Custom Mapping**: Extend `convert_integers_to_boolean` if your new dataset introduces non-standard binary flags (e.g. `active`/`inactive`).
+
+
+
 
