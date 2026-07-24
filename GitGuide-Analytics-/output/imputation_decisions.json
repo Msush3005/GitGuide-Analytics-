@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "customer_id": {
     "column_type": "primary_identifier",
     "null_count_before": 0,
@@ -52,4 +53,38 @@
     "business_reasoning": "For time-series analysis, forward fill preserves temporal continuity. Status typically does not change frequently.",
     "risk_assessment": "Medium - assumes no change between observations"
   }
+=======
+    "original_rows": 5,
+    "cleaned_rows": 3,
+    "rows_removed": 2,
+    "original_missing_values": {
+        "customer_id": 0,
+        "name": 1,
+        "email": 2,
+        "amount": 0,
+        "quantity": 1,
+        "category": 0,
+        "region": 1,
+        "last_updated": 1
+    },
+    "remaining_missing_values": {
+        "customer_id": 0,
+        "name": 1,
+        "email": 0,
+        "amount": 0,
+        "quantity": 0,
+        "category": 0,
+        "region": 0,
+        "last_updated": 0
+    },
+    "strategies": {
+        "amount": "Median Imputation",
+        "quantity": "Median Imputation",
+        "category": "Mode Imputation",
+        "region": "Mode Imputation",
+        "last_updated": "Forward Fill",
+        "customer_id": "Drop rows if missing",
+        "email": "Drop rows if missing"
+    }
+>>>>>>> ed689b7 (feat: implement missing value detection and imputation)
 }

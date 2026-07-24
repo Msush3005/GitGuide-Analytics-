@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 Missing Value Treatment and Imputation Pipeline
 GitGuide-Analytics
@@ -15,10 +16,17 @@ import sys
 import json
 import pandas as pd
 import numpy as np
+=======
+import pandas as pd
+import numpy as np
+import json
+import os
+>>>>>>> ed689b7 (feat: implement missing value detection and imputation)
 
 
 def analyze_missing_values(df):
     """
+<<<<<<< HEAD
     Compute null counts and percentages before treatment.
     
     Args:
@@ -312,3 +320,152 @@ if __name__ == "__main__":
     except Exception as err:
         print(f"Missing Value Treatment Failed: {err}", file=sys.stderr)
         sys.exit(1)
+=======
+    Analyze missing values in each column.
+    """
+    report = {}
+
+    print("\n========== Missing Value Analysis ==========")
+
+    for col in df.columns:
+        missing_count = df[col].isnull().sum()
+        missing_percentage = round((missing_count / len(df)) * 100, 2)
+
+        report[col] = {
+            "missing_count": int(missing_count),
+            "missing_percentage": missing_percentage
+        }
+
+        print(f"{col}: {missing_count} missing ({missing_percentage}%)")
+
+    return report
+
+
+def impute_mean_median(df, columns, strategy="mean"):
+    """
+    Fill numerical columns using mean or median.
+    """
+    for col in columns:
+        if col in df.columns:
+            if strategy == "mean":
+                value = df[col].mean()
+            else:
+                value = df[col].median()
+
+            df[col] = df[col].fillna(value)
+
+    return df
+
+
+def impute_mode(df, columns):
+    """
+    Fill categorical columns using mode.
+    """
+    for col in columns:
+        if col in df.columns:
+            mode = df[col].mode()
+
+            if not mode.empty:
+                df[col] = df[col].fillna(mode[0])
+
+    return df
+
+
+def impute_forward_fill(df, columns):
+    """
+    Forward fill missing values.
+    """
+    for col in columns:
+        if col in df.columns:
+            df[col] = df[col].ffill()
+
+    return df
+
+
+def drop_rows_with_nulls(df, required_columns):
+    """
+    Drop rows with nulls in required columns.
+    """
+    before = len(df)
+    df = df.dropna(subset=required_columns)
+    after = len(df)
+
+    print(f"\nDropped {before - after} rows because of missing {required_columns}")
+
+    return df
+
+
+def document_imputation_decisions(original_df, cleaned_df):
+    """
+    Save imputation decisions.
+    """
+    os.makedirs("output", exist_ok=True)
+
+    report = {
+        "original_rows": len(original_df),
+        "cleaned_rows": len(cleaned_df),
+        "rows_removed": len(original_df) - len(cleaned_df),
+        "original_missing_values": original_df.isnull().sum().to_dict(),
+        "remaining_missing_values": cleaned_df.isnull().sum().to_dict(),
+        "strategies": {
+            "amount": "Median Imputation",
+            "quantity": "Median Imputation",
+            "category": "Mode Imputation",
+            "region": "Mode Imputation",
+            "last_updated": "Forward Fill",
+            "customer_id": "Drop rows if missing",
+            "email": "Drop rows if missing"
+        }
+    }
+
+    with open("output/imputation_decisions.json", "w") as f:
+        json.dump(report, f, indent=4)
+
+    print("\nImputation report saved to output/imputation_decisions.json")
+
+    return report
+
+
+def validate_imputation(original_df, cleaned_df):
+    """
+    Compare missing values before and after cleaning.
+    """
+    print("\n========== Validation ==========")
+
+    before = original_df.isnull().sum()
+    after = cleaned_df.isnull().sum()
+
+    validation = pd.DataFrame({
+        "Before": before,
+        "After": after
+    })
+
+    print(validation)
+
+    return validation
+
+
+if __name__ == "__main__":
+
+    df_original = pd.read_csv("data/raw/raw_data.csv")
+
+    analyze_missing_values(df_original)
+
+    df = drop_rows_with_nulls(df_original, ["customer_id", "email"])
+
+    df = impute_mean_median(df, ["amount", "quantity"], strategy="median")
+
+    df = impute_mode(df, ["category", "region"])
+
+    df = impute_forward_fill(df, ["last_updated"])
+
+    validate_imputation(df_original, df)
+
+    document_imputation_decisions(df_original, df)
+
+    os.makedirs("data/processed", exist_ok=True)
+
+    df.to_csv("data/processed/cleaned_data.csv", index=False)
+
+    print("\nCleaned data saved to data/processed/cleaned_data.csv")
+>>>>>>> ed689b7 (feat: implement missing value detection and imputation)
