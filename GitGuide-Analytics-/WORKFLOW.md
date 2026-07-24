@@ -184,4 +184,34 @@ This loads raw files from `data/raw/customers.csv` and `data/raw/transactions.js
 2. **Configure File Paths**: Set the raw input paths and processed output target folders.
 3. **Specify Data Types**: Create a `dtype_dict` mapping column names to target pandas datatypes (e.g. `{'customer_id': 'int64'}`) to ensure consistent database keys.
 
+---
+
+## 8. Missing Value Imputation Strategy (`scripts/handle_missing.py`)
+
+This module manages missing data by analyzing null distributions and applying domain-appropriate imputation strategies. It guarantees that downstream mathematical calculations and model training run on complete datasets.
+
+### How to Execute the Imputation Script
+Run the imputation script from the project root:
+
+```bash
+python scripts/handle_missing.py
+```
+
+This reads the raw dataset from `data/raw/missing_data.csv`, treats missing values, generates a decision log at `output/imputation_decisions.json`, and exports the final cleaned dataset to `data/processed/cleaned_data.csv`.
+
+### Imputation Rules & Selection Criteria
+- **Row Dropping (`drop_rows_with_nulls`)**: Applied to critical key identifier columns (e.g. `customer_id`, `email`). Imputing identifiers introduces fake records and corrupts joins.
+- **Median/Mean Imputation (`impute_mean_median`)**: Applied to numerical columns (e.g. `amount`, `quantity`). Median is preferred for highly skewed distributions to prevent outlier bias.
+- **Mode Imputation (`impute_mode`)**: Applied to categorical columns (e.g. `category`, `region`), filling nulls with the most frequent value.
+- **Forward-Fill (`impute_forward_fill`)**: Applied to sequential/time-series data (e.g. `last_updated`), propagating the last known state forward.
+
+### Auditing & Validation
+- **Imputation Decisions Log (`output/imputation_decisions.json`)**: Tracks every column, strategy used, value imputed, and business reasoning for auditing.
+- **Comparison Validation Report**: Prints a terminal report detailing total rows before/after, rows removed, and final null percentages.
+
+### How to Customize for New Columns
+1. **Update Pipeline Calls**: Modify column parameters in the main execution block of `scripts/handle_missing.py`.
+2. **Update Imputation Decisions**: Add entries in the `document_imputation_decisions` function mapping columns to their business justification.
+
+
 
