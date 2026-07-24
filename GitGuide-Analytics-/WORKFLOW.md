@@ -213,5 +213,31 @@ This reads the raw dataset from `data/raw/missing_data.csv`, treats missing valu
 1. **Update Pipeline Calls**: Modify column parameters in the main execution block of `scripts/handle_missing.py`.
 2. **Update Imputation Decisions**: Add entries in the `document_imputation_decisions` function mapping columns to their business justification.
 
+---
+
+## 9. Data Type Standardization (`scripts/enforce_types.py`)
+
+This module enforces strict data types on raw datasets. Standardizing unstructured strings into clean datatypes prevents database join misalignments, numeric calculation errors, and parsing ambiguities.
+
+### How to Execute the Type Enforcement Script
+Run the script from the project root:
+
+```bash
+python scripts/enforce_types.py
+```
+
+This reads the untyped data from `data/raw/untyped_data.csv`, converts dates, currency formats, and boolean indicators, and saves the cleaned dataset to `data/processed/typed_data.csv`. It also writes a before/after audit report to `output/dtype_conversion_report.csv`.
+
+### Type Standardisation Rules & Functions
+- **Datetime Casting (`convert_string_dates_to_datetime`)**: Converts string representations to proper pandas datetimes. Always specify `date_format` to prevent date-parsing ambiguities (e.g. interpreting `01-02-2025` differently in US vs UK regions).
+- **Currency Cleaning (`convert_currency_to_float`)**: Strips formatting symbols like `$` and `,` from currency columns and casts variables to `float64`, enabling downstream mathematical aggregations.
+- **Boolean Flag Mapping (`convert_integers_to_boolean`)**: Maps integer binary flags (`0` and `1`) and text labels (`yes`, `no`, `true`, `false`) to native pandas booleans.
+- **Conversion Audit (`compare_dtypes`)**: Evaluates columns before/after, generating `output/dtype_conversion_report.csv` listing column changes.
+
+### How to Configure for New Columns
+1. **Define Target Dtypes**: Modify parameters in the `__main__` execution block of `scripts/enforce_types.py`.
+2. **Add Custom Mapping**: Extend `convert_integers_to_boolean` if your new dataset introduces non-standard binary flags (e.g. `active`/`inactive`).
+
+
 
 
