@@ -1,0 +1,11 @@
+product_name,cust_segment,location
+electronics,B2B,So Paulo
+electronics,B2B,Montral
+electronics,B2B,New York
+software,SMB,So Paulo
+software,SMB,Montral
+software,SMB,New York
+electronics,Enterprise,So Paulo
+electronics,Enterprise,Montral
+electronics,Enterprise,New York
+software,B2B,So Paulo
