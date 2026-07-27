@@ -282,6 +282,35 @@ This generates a synthetic dataset representing messy input entries (spaces, cas
 1. **Define New Mapping Keys**: Add entry groups in the configuration dictionary in `scripts/string_cleaning_pipeline.py`.
 2. **Toggle Parameters**: Adjust `lowercase`, `strip`, `remove_special`, or `mapping` flags in `clean_text_column` to configure the cleaning level per column.
 
+---
+
+## 12. Datetime Feature Engineering (`scripts/datetime_feature_engineering.py`)
+
+This module processes raw transaction dates into proper Pandas datetime64 values and extracts multiple temporal dimensions to enable time-series aggregations, trend analysis, and recency-based churn modeling.
+
+### How to Execute the Datetime Feature Engineering Script
+Run the script from the project root:
+
+```bash
+python scripts/datetime_feature_engineering.py
+```
+
+This generates a 130-week synthetic transaction dataset, parses date strings using explicit formatting patterns, extracts temporal features, resamples weekly sales metrics, calculates customer recency, generates day-of-week x hour aggregation pivot tables, and exports an additive seasonal decomposition plot to `output/datetime_decomposition.png`.
+
+### Core Engineering Operations
+- **Explicit Datetime Parsing (`parse_timestamp_explicit`)**: Standardizes date strings to datetime64 structures using explicit format variables (e.g. `%Y-%m-%d %H:%M:%S`). This prevents regional date-parsing ambiguities.
+- **Feature Extraction (`extract_temporal_features`)**: Extracts the day of the week, hour of the day (0-23), and ISO week numbers to evaluate transaction volumes and identify busy times.
+- **Weekly Resampling**: Groups and sums transaction amounts into weekly buckets (`resample('W')`) to identify long-term business performance trends.
+- **Customer Recency calculation (`compute_recency_metric`)**: Evaluates the number of days since each customer's last purchase. Recency metrics are vital indicators for churn-prediction systems.
+- **Multi-dimensional Heatmap Aggregation (`build_time_indexed_aggregation`)**: Summarizes transaction counts and values grouped by day of the week and hour, identifying peak activity windows.
+- **Seasonal Decomposition**: Decomposes weekly revenue into Trend, Seasonal, and Residual components using statsmodels to help identify repeating business patterns.
+
+### How to Configure for New Datasets
+1. **Change Input Timestamp columns**: Update target column parameters in the main execution block of `scripts/datetime_feature_engineering.py`.
+2. **Configure Parsing Formats**: Adjust the format string to match your input dates (e.g., `%d/%m/%Y %H:%M:%S` for European formats).
+3. **Change Resampling Frequency**: Modify the resampling argument (e.g., `'D'` for daily, `'M'` for monthly) depending on reporting needs.
+
+
 
 
 
