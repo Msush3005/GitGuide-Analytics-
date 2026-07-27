@@ -256,6 +256,33 @@ When new columns or datasets are introduced in future releases:
 4. **Update Data Dictionary Guide**: Add sections to `docs/DATA_DICTIONARY.md` describing update frequencies, null-handling strategies, and mathematical column relationships.
 5. **Periodic Audits**: Conduct quarterly reviews of the dictionary to ensure descriptions stay aligned with evolving CRM metrics.
 
+---
+
+## 11. String Cleaning Pipeline (`scripts/string_cleaning_pipeline.py`)
+
+This module builds a reusable text standardization pipeline to clean, normalize, and consolidate text fields before analytical calculations. Standardizing strings prevents grouping and aggregation errors caused by trailing spaces or case differences.
+
+### How to Execute the String Cleaning Pipeline
+Run the script from the project root:
+
+```bash
+python scripts/string_cleaning_pipeline.py
+```
+
+This generates a synthetic dataset representing messy input entries (spaces, case variances, special characters), processes the data, displays a before/after value counts audit, runs edge-case tests, and saves the cleaned results to `data/processed/cleaned_strings.csv`.
+
+### Key Cleaning Techniques
+- **Whitespace Trimming (`strip_all_strings`)**: Trims leading and trailing spaces from all string columns to resolve spacing-based duplication.
+- **Casing Normalization (`normalize_casing`)**: Normalizes categorical columns to lowercase or uppercase so that entries like `John` and `JOHN` merge into a single unique value.
+- **Special Characters Strip (`remove_special_characters`)**: Applies regex filter `[^a-zA-Z0-9 ]` to remove non-alphanumeric noise (e.g. converting `São Paulo` to `So Paulo` and `Montréal` to `Montral`).
+- **Category Map Consolidation**: Translates spelling variances and abbreviations (e.g., `sme`, `smb`, `small medium enterprise`) into canonical labels (`SMB`) using mapping dictionaries.
+- **Null Safety (`clean_text_column`)**: Integrates NaN/null detection and warning messages while preserving missing records during cleaning.
+
+### Customizing for New Columns
+1. **Define New Mapping Keys**: Add entry groups in the configuration dictionary in `scripts/string_cleaning_pipeline.py`.
+2. **Toggle Parameters**: Adjust `lowercase`, `strip`, `remove_special`, or `mapping` flags in `clean_text_column` to configure the cleaning level per column.
+
+
 
 
 
