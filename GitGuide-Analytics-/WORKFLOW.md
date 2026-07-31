@@ -337,6 +337,37 @@ This reads raw numerical inputs from `data/raw/outlier_data.csv`, evaluates anom
 2. **Select Detection Method**: Choose IQR for skewed metrics (e.g., spend, transaction size) or Z-score for symmetric normal metrics.
 3. **Adjust Multiplier**: Increase the IQR multiplier (e.g., to $3.0 \times \text{IQR}$) to isolate extreme outliers while keeping mild anomalies intact.
 
+---
+
+## 14. Data Quality and Business Rule Validation (`scripts/validate_rules.py`)
+
+This module enforces domain-specific validation constraints across incoming data records prior to downstream pipeline execution. It validates numerical ranges, null constraints, string formats, and multi-column temporal business rules, isolating failure records for investigation.
+
+### Validation vs. Data Cleaning
+- **Data Validation**: Evaluates data against strict logical rules, generating boolean assertions. Invalid records are quarantined to prevent corrupted assumptions from entering the pipeline.
+- **Data Cleaning**: Modifies or imputes values (e.g. capping outliers, stripping whitespace) to transform malformed records into valid formats.
+
+### How to Execute the Validation Script
+Run the script from the project root:
+
+```bash
+python scripts/validate_rules.py
+```
+
+This reads test inputs from `data/raw/quality_test.csv`, evaluates validation rules, exports isolated failure records to `output/validation_failures.csv`, and outputs clean records to `data/processed/validated_clean_data.csv`.
+
+### Rule Categories & Functions
+- **Range Checks (`validate_range_checks`)**: Verifies numerical boundaries (e.g., $0 \le \text{age} \le 150$, $\text{price} \ge 0$, and $\text{birth\_date} \le \text{today}$).
+- **Null Constraints (`validate_null_constraints`)**: Enforces mandatory entity keys (e.g., non-null `customer_id` and `email`).
+- **Format Pattern Matching (`validate_format_patterns`)**: Validates regex formatting (e.g., presence of `@` in email and exact 10-digit phone strings `^\d{10}$`).
+- **Business Rule Validation (`validate_business_rules`)**: Verifies multi-column relational logic (e.g. $\text{end\_date} \ge \text{start\_date}$).
+- **Failure Isolation (`generate_validation_report`)**: Aggregates boolean checks (`passes_all_checks`), quarantines failed rows into `output/validation_failures.csv`, and outputs clean records.
+
+### How to Add New Validation Rules
+1. **Define Validation Function**: Add a new function in `scripts/validate_rules.py` returning a boolean Series column (e.g., `valid_discount`).
+2. **Register in Summary List**: Add the new boolean column to the `validation_cols` list in `generate_validation_report`.
+
+
 
 
 
