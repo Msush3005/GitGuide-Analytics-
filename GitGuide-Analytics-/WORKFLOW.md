@@ -310,6 +310,34 @@ This generates a 130-week synthetic transaction dataset, parses date strings usi
 2. **Configure Parsing Formats**: Adjust the format string to match your input dates (e.g., `%d/%m/%Y %H:%M:%S` for European formats).
 3. **Change Resampling Frequency**: Modify the resampling argument (e.g., `'D'` for daily, `'M'` for monthly) depending on reporting needs.
 
+---
+
+## 13. Outlier Detection and Handling Strategy (`scripts/handle_outliers.py`)
+
+This module manages extreme numerical anomalies and unfeasible inputs (e.g., revenue of $50,000 when typical is $500, or age values of 155) using statistical detection thresholds, capping/Winsorization bounds, binary anomaly flags, and an audit trail.
+
+### How to Execute the Outlier Handling Script
+Run the script from the project root:
+
+```bash
+python scripts/handle_outliers.py
+```
+
+This reads raw numerical inputs from `data/raw/outlier_data.csv`, evaluates anomalies, caps boundary values, appends a combined binary anomaly flag `is_outlier`, exports cleaned results to `data/processed/outliers_treated.csv`, and logs transformation decisions in `output/cleaning_log.csv`.
+
+### Statistical Outlier Methods & Selection Criteria
+- **Z-Score Detection (`detect_outliers_zscore`)**: Measures how many standard deviations ($\sigma$) a value lies from the mean ($\mu$). Effective for normally distributed data ($\text{Threshold} = \pm 3.0$).
+- **IQR Detection (`detect_outliers_iqr`)**: Calculates the Interquartile Range ($\text{IQR} = Q_3 - Q_1$) and flags values below $Q_1 - 1.5 \times \text{IQR}$ or above $Q_3 + 1.5 \times \text{IQR}$. Highly robust for right-skewed or heavy-tailed distributions.
+- **Capping / Winsorization (`cap_outliers`)**: Replaces values outside boundary limits with upper and lower thresholds (`.clip()`), preserving data records without distorting statistical metrics.
+- **Binary Flagging (`flag_combined_outliers`)**: Creates an `is_outlier` boolean column combining Z-score and IQR flags, enabling downstream analytics to filter or weight records dynamically.
+- **Transformation Audit (`create_cleaning_log`)**: Saves transformation logs to `output/cleaning_log.csv` detailing target columns, methods used, threshold limits, and affected row counts.
+
+### How to Configure for New Columns
+1. **Add Target Columns**: Include new columns in the processing pipeline of `scripts/handle_outliers.py`.
+2. **Select Detection Method**: Choose IQR for skewed metrics (e.g., spend, transaction size) or Z-score for symmetric normal metrics.
+3. **Adjust Multiplier**: Increase the IQR multiplier (e.g., to $3.0 \times \text{IQR}$) to isolate extreme outliers while keeping mild anomalies intact.
+
+
 
 
 
