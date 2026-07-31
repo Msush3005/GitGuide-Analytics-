@@ -1,6 +1,11 @@
-customer_id,name,email,amount,status
-1,Alice,alice@example.com,100,active
-2,Bob,,250,active
-3,Alice,alice@example.com,100,active
-4,,charlie@example.com,500,inactive
-5,Diana,,-50,inactive
+customer_id,name,email,phone,age,price,birth_date,start_date,end_date
+101,Alice Smith,alice@example.com,9876543210,28,150.00,1995-05-10,2025-01-01,2025-01-15
+102,Bob Jones,bob@example.com,1234567890,35,-50.00,1988-08-20,2025-01-01,2025-01-10
+,Charlie Brown,charlie@example.com,5551234567,42,200.00,1981-03-15,2025-01-01,2025-01-20
+104,Diana Prince,diana_invalid_email,9998887776,30,120.00,1993-11-05,2025-01-01,2025-01-10
+105,Evan Wright,evan@example.com,12345,29,80.00,1994-02-12,2025-01-01,2025-01-15
+106,Fiona Gallagher,fiona@example.com,9876543211,155,95.00,1968-07-22,2025-01-01,2025-01-12
+107,George Clark,george@example.com,9876543212,45,310.00,2050-01-01,2025-01-01,2025-01-25
+108,Hannah Abbott,hannah@example.com,9876543213,22,175.00,2001-09-30,2025-01-15,2025-01-01
+109,Ian Malcolm,ian@example.com,9876543214,50,450.00,1973-12-01,2025-01-01,2025-01-30
+110,Julia Roberts,julia@example.com,9876543215,26,220.00,1997-04-18,2025-01-05,2025-01-25

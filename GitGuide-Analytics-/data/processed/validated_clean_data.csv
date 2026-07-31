@@ -1,0 +1,4 @@
+customer_id,name,email,phone,age,price,birth_date,start_date,end_date,valid_age,valid_price,valid_birth_date,valid_customer_id,valid_email,valid_email_format,valid_phone,valid_date_order,passes_all_checks
+101.0,Alice Smith,alice@example.com,9876543210,28,150.0,1995-05-10,2025-01-01,2025-01-15,True,True,True,True,True,True,True,True,True
+109.0,Ian Malcolm,ian@example.com,9876543214,50,450.0,1973-12-01,2025-01-01,2025-01-30,True,True,True,True,True,True,True,True,True
+110.0,Julia Roberts,julia@example.com,9876543215,26,220.0,1997-04-18,2025-01-05,2025-01-25,True,True,True,True,True,True,True,True,True
