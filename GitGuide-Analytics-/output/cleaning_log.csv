@@ -1,0 +1,3 @@
+column,method,action,threshold_lower,threshold_upper,affected_rows,date
+revenue,IQR,cap,415.75,594.75,2,2026-07-31 12:52:47
+age,IQR_and_ZScore,cap,11.62,58.62,2,2026-07-31 12:52:47
