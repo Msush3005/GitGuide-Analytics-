@@ -398,6 +398,37 @@ This reads/generates input files `data/raw/customers_merge.csv` and `data/raw/or
 2. **Set Target Join Keys**: Modify `join_key` (or pass multi-key lists `on=['customer_id', 'region']`).
 3. **Configure Join Strategy**: Change the `how` parameter (`left`, `inner`, `outer`) depending on whether missing matches must be retained or dropped.
 
+---
+
+## 16. Business Feature Engineering & Customer Segmentation (`scripts/engineer_features.py`)
+
+This module transforms raw operational variables (counts, days, totals) into contextual business features through time/volume ratio normalization, fixed & quantile binning (`pd.cut` & `pd.qcut`), and composite RFM health scoring.
+
+### How to Execute the Feature Engineering Script
+Run the script from the project root:
+
+```bash
+python scripts/engineer_features.py
+```
+
+This reads/generates input metrics from `data/raw/customer_activity.csv`, computes ratio features, segments customers into categorical tiers, aggregates RFM scores, exports processed records to `data/processed/engineered_features.csv`, and writes an audit summary to `output/feature_engineering_report.json`.
+
+### Feature Types & Engineering Principles
+- **Ratio Features (`create_ratio_features`)**: Normalizes raw counts against time or volume dimensions to extract true behavioral signals:
+  - `transactions_per_month` = `total_transactions / (days_as_customer / 30.0)`
+  - `avg_spend_per_transaction` = `total_spent / total_transactions`
+  - `lifetime_value_per_month` = `total_spent / (days_as_customer / 30.0)`
+- **Equal-Width Binning (`pd.cut`)**: Categorizes continuous metrics into predefined business thresholds (e.g. `engagement_bin_equal`: `low` [0-2], `medium` [2-10], `high` [>10]).
+- **Equal-Frequency Quantile Binning (`pd.qcut`)**: Segments continuous metrics into balanced quantile groups (e.g. `spend_tier_quantile`: 4 equal-sized quartiles `tier_1` to `tier_4`).
+- **Composite RFM Scoring (`compute_rfm_composite_score`)**: Constructs an integrated customer health score by combining 5-quantile Recency, Frequency, and Monetary scores (`rfm_score = recency_score + frequency_score + monetary_score`).
+- **Feature Audit Logging (`export_feature_report`)**: Writes a structured JSON summary report (`output/feature_engineering_report.json`) recording ratio feature statistics, tier distributions, and RFM score metrics.
+
+### How to Configure for New Datasets
+1. **Change Input Features**: Update column references in `scripts/engineer_features.py` to target your dataset's activity metrics.
+2. **Adjust Bin Boundaries**: Modify threshold lists in `pd.cut()` to match domain business rules (e.g., custom engagement thresholds).
+3. **Customize Quantiles**: Change `q` parameter in `pd.qcut()` (e.g. `q=5` for quintiles or `q=10` for deciles).
+
+
 
 
 
