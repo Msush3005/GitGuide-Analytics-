@@ -367,6 +367,38 @@ This reads test inputs from `data/raw/quality_test.csv`, evaluates validation ru
 1. **Define Validation Function**: Add a new function in `scripts/validate_rules.py` returning a boolean Series column (e.g., `valid_discount`).
 2. **Register in Summary List**: Add the new boolean column to the `validation_cols` list in `generate_validation_report`.
 
+---
+
+## 15. Relational Data Merging and Join Validation (`scripts/merge_datasets.py`)
+
+This module executes relational merges across entity datasets (e.g. combining 1,000 customer records with 5,000 transaction orders on `customer_id`), validates row count deltas, detects unmatched keys, evaluates join strategies, prevents column name collisions, and exports structured join decision logs.
+
+### How to Execute the Merging Script
+Run the script from the project root:
+
+```bash
+python scripts/merge_datasets.py
+```
+
+This reads/generates input files `data/raw/customers_merge.csv` and `data/raw/orders_merge.csv`, performs explicit Left Join merging, isolates unmatched customer keys and orphaned orders into `output/unmatched_customers.csv` and `output/unmatched_orders.csv`, writes an audit report to `output/join_report.json`, and exports the clean merged dataset to `data/processed/merged_customer_orders.csv`.
+
+### Key Join Concepts & Functions
+- **Explicit Join & Row Count Validation (`execute_explicit_join`)**: Merges tables explicitly on key parameters (`pd.merge(df_left, df_right, on='customer_id', how='left')`). Calculates and logs row count deltas ($\text{Result Rows} - \text{Left Rows}$) to detect unintended record duplication or unexpected loss.
+- **Unmatched Key Diagnostics (`detect_unmatched_keys`)**: Identifies records present in one table but missing in the other using `.isin()` filters. Exports unmatched left entities (customers with zero orders) and orphaned right entities (orders with unmapped customer IDs).
+- **Join Strategy Comparison (`compare_join_types`)**: Evaluates record counts across the 4 fundamental join types:
+  - **Inner Join**: Returns only matching keys present in both tables.
+  - **Left Join**: Preserves all left table records regardless of matches.
+  - **Right Join**: Preserves all right table records regardless of matches.
+  - **Outer Join**: Preserves all records from both tables, filling missing fields with NaN.
+- **Duplication & Suffix Collision Prevention (`validate_column_duplication`)**: Inspects merged column headers for `_x` and `_y` suffix collisions caused by non-key duplicate column names and calculates key cardinality (`value_counts()`).
+- **Join Audit Logging (`document_join_decision`)**: Exports a structured JSON audit report (`output/join_report.json`) recording table names, join types, row counts, unmatched counts, and business reasoning.
+
+### How to Configure for New Datasets
+1. **Change Input Files**: Update raw data paths in `scripts/merge_datasets.py`.
+2. **Set Target Join Keys**: Modify `join_key` (or pass multi-key lists `on=['customer_id', 'region']`).
+3. **Configure Join Strategy**: Change the `how` parameter (`left`, `inner`, `outer`) depending on whether missing matches must be retained or dropped.
+
+
 
 
 
