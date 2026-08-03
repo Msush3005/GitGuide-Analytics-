@@ -1,0 +1,40 @@
+{
+  "total_records": 1000,
+  "ratio_feature_stats": {
+    "transactions_per_month": {
+      "mean": 6.28,
+      "std": 10.12,
+      "min": 0.03,
+      "max": 99.68
+    },
+    "avg_spend_per_transaction": {
+      "mean": 218.73,
+      "std": 646.54,
+      "min": 0.61,
+      "max": 9008.2
+    },
+    "lifetime_value_per_month": {
+      "mean": 508.04,
+      "std": 844.31,
+      "min": 2.26,
+      "max": 9029.68
+    }
+  },
+  "engagement_tier_distribution": {
+    "medium": 523,
+    "low": 322,
+    "high": 155
+  },
+  "spend_tier_distribution": {
+    "tier_1": 250,
+    "tier_2": 250,
+    "tier_3": 250,
+    "tier_4": 250
+  },
+  "rfm_score_stats": {
+    "min": 3,
+    "max": 15,
+    "mean": 9.01,
+    "median": 9.0
+  }
+}
