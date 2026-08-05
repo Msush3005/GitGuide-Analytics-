@@ -1,0 +1,20 @@
+{
+  "column": "revenue",
+  "count": 5000,
+  "mean": 5315.87,
+  "median": 393.13,
+  "std": 10010.29,
+  "min": 50.0,
+  "max": 37972.37,
+  "q1_25th": 177.9,
+  "q3_75th": 1025.34,
+  "skewness": 1.62,
+  "kurtosis": 0.82,
+  "skewness_interpretation": "Highly skewed distribution; median is preferred over mean.",
+  "kurtosis_interpretation": "Normal tail distribution.",
+  "segment_distribution": {
+    "mid_value": 2500,
+    "high_value": 1250,
+    "low_value": 1250
+  }
+}
