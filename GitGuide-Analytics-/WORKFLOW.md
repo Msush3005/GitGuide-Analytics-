@@ -454,6 +454,33 @@ This reads/generates input metrics from `data/raw/large_revenue_dataset.csv` (10
 1. **Change Numerical Target Columns**: Update `column` parameters in `scripts/vectorized_performance.py` (e.g., `transaction_count`).
 2. **Apply Custom Vectorized Formulas**: Use NumPy mathematical functions (e.g. `np.log1p()`, `np.where()`) for element-wise array operations.
 
+---
+
+## 18. Distribution Analysis & Statistical Profiling (`scripts/analyze_distributions.py`)
+
+This module evaluates the statistical distribution shape of customer revenue and activity metrics. It calculates skewness and kurtosis parameters, determines when medians are superior to means, exports Histogram & KDE density plots, and compares High-Value vs. Low-Value customer spend distributions.
+
+### How to Execute the Distribution Analysis Script
+Run the script from the project root:
+
+```bash
+python scripts/analyze_distributions.py
+```
+
+This reads/generates bimodal revenue inputs from `data/raw/bimodal_revenue_dataset.csv` (5,000 records), calculates statistical moments, exports distribution plots to `output/distribution_plots.png` and segment comparisons to `output/segment_distribution_comparison.png`, writes clean data to `data/processed/distribution_analyzed_data.csv`, and outputs an audit report to `output/distribution_analysis_report.json`.
+
+### Statistical Concepts & Visual Methods
+- **Skewness & Central Tendency (`compute_distribution_statistics`)**: Measures asymmetry using `scipy.stats.skew`. Positive skew ($> +1.0$) indicates that a small cluster of high-value enterprise accounts pulls up the mean (e.g. Mean $\$5,315.87$ vs Median $\$393.13$). In skewed distributions, the median represents true typical customer spend.
+- **Kurtosis & Tail Risk**: Measures tail weight using `scipy.stats.kurtosis`. High excess kurtosis ($> 3.0$) indicates leptokurtic distributions where extreme financial outliers are prevalent.
+- **Histogram & KDE Density Plotting (`plot_distribution_shape`)**: Renders combined equal-width histograms and Kernel Density Estimates (`sns.histplot(..., kde=True)`), adding mean/median benchmark lines to visually demonstrate distribution pull.
+- **Segment Distribution Comparisons (`plot_segment_comparison`)**: Partitions customers into High-Value ($\ge Q_3$) and Low-Value ($\le Q_1$) tiers and plots overlapping KDE density curves to evaluate cohort differences.
+- **Statistical Audit Logging (`export_distribution_report`)**: Saves a structured JSON report (`output/distribution_analysis_report.json`) recording statistical moments, skewness/kurtosis interpretations, and segment distributions.
+
+### How to Configure for New Columns
+1. **Target Feature Columns**: Update `column` parameters in `scripts/analyze_distributions.py` (e.g. `total_transactions`).
+2. **Adjust Segment Percentiles**: Modify quantile thresholds for segment comparisons (e.g. 90th percentile for top enterprise tiers).
+
+
 
 
 
