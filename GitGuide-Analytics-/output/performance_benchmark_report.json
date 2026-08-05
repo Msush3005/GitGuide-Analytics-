@@ -1,0 +1,7 @@
+{
+  "total_records": 100000,
+  "loop_execution_time_seconds": 0.011148,
+  "vectorized_minmax_time_seconds": 0.00055,
+  "vectorized_zscore_time_seconds": 0.000734,
+  "speedup_factor": 20.3
+}
