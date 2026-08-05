@@ -428,6 +428,33 @@ This reads/generates input metrics from `data/raw/customer_activity.csv`, comput
 2. **Adjust Bin Boundaries**: Modify threshold lists in `pd.cut()` to match domain business rules (e.g., custom engagement thresholds).
 3. **Customize Quantiles**: Change `q` parameter in `pd.qcut()` (e.g. `q=5` for quintiles or `q=10` for deciles).
 
+---
+
+## 17. High-Performance Vectorized Operations & Benchmarking (`scripts/vectorized_performance.py`)
+
+This module replaces slow Python iterative loops (`for` loops and `.apply()`) with C-compiled NumPy array vectorization. It executes Min-Max and Z-Score normalizations across 100,000+ records, measures timing benchmarks, computes speedup multipliers, and integrates optimized arrays back into Pandas DataFrames.
+
+### How to Execute the Performance Optimization Script
+Run the script from the project root:
+
+```bash
+python scripts/vectorized_performance.py
+```
+
+This reads/generates input metrics from `data/raw/large_revenue_dataset.csv` (100,000 records), compares Python loop execution vs. NumPy array vectorization, exports optimized features to `data/processed/vectorized_optimized_features.csv`, and logs performance metrics in `output/performance_benchmark_report.json`.
+
+### Core Vectorization Principles & Functions
+- **Interpreter Overhead Elimination**: Python loops call the interpreter for every row, compounding execution latency. NumPy operates on contiguous C-memory blocks in a single parallelized operation.
+- **Vectorized Min-Max Normalization (`min_max_normalize_vectorized`)**: Normalizes numerical metrics to $[0, 1]$ using element-wise array math: `(revenue_array - revenue_array.min()) / (revenue_array.max() - revenue_array.min())`.
+- **Vectorized Z-Score Normalization (`z_score_normalize_vectorized`)**: Standardizes numerical metrics to mean 0 and standard deviation 1: `(revenue_array - revenue_array.mean()) / revenue_array.std()`.
+- **Performance Benchmarking (`benchmark_performance`)**: Uses `time.time()` to measure execution duration across 100,000 records, calculating the speedup factor ($\text{Loop Time} / \text{Vectorized Time}$, achieving 20x+ speedups).
+- **Benchmark Audit Reporting (`export_benchmark_report`)**: Writes a structured JSON summary (`output/performance_benchmark_report.json`) detailing record counts, execution times in seconds, and speedup ratios.
+
+### How to Configure for New Columns
+1. **Change Numerical Target Columns**: Update `column` parameters in `scripts/vectorized_performance.py` (e.g., `transaction_count`).
+2. **Apply Custom Vectorized Formulas**: Use NumPy mathematical functions (e.g. `np.log1p()`, `np.where()`) for element-wise array operations.
+
+
 
 
 
