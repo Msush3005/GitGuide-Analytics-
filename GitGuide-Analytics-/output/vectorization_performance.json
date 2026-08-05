@@ -1,0 +1,6 @@
+{
+    "dataset_rows": 100000,
+    "loop_time_seconds": 0.01701,
+    "numpy_time_seconds": 0.000637,
+    "speedup_factor": 26.7
+}

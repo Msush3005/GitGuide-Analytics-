@@ -90,3 +90,30 @@ Sprint deliverables and bugs are tracked using GitHub Issues.
   - **Label(s)**: Categorized with relevant tags (e.g., `enhancement`, `data-pipeline`, `feature`, `documentation`).
   - **Assignee**: Explicitly assigned to the team member responsible for execution.
 - **Lifecycle Closure**: Issues are automatically closed when their linked PR is merged into `main` (via `Closes #X`).
+
+---
+
+## 9. NumPy Vectorised Computation Workflow (`scripts/vectorized_ops.py`)
+
+This module replaces slow, iterative Python loops with high-performance NumPy vectorized computations for numerical transformations (normalization, scoring, ranking).
+
+### Why Vectorization Over Python Loops
+- **C-Level Performance**: NumPy operations run pre-compiled C loops without Python interpreter overhead per element.
+- **Contiguous Memory Arrays**: Operates on contiguous memory blocks, leveraging CPU cache locality and SIMD (Single Instruction Multiple Data) hardware instructions.
+- **Production Scalability**: Computes million-row datasets in milliseconds (20x to 3000x faster than standard Python loops).
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/vectorized_ops.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_benchmark_dataset(num_rows, filepath)`**: Generates or loads a synthetic dataset of 100,000 revenue records.
+- **`task1_min_max_normalization(df)`**: Applies `(arr - arr.min()) / (arr.max() - arr.min())` to scale revenue into the `[0, 1]` range.
+- **`task2_z_score_normalization(df)`**: Applies `(arr - arr.mean()) / arr.std()` for standard score normal distribution (mean=0, std=1).
+- **`task3_bulk_ranking(df)`**: Uses `np.argsort(-revenue_array)` to rank all records in descending revenue order in $O(N \log N)$ vector time.
+- **`task4_time_performance_comparison(df)`**: Benchmarks Python loop execution vs NumPy vectorization using `time.time()` and reports speedup metrics.
+- **`task5_integrate_back_to_dataframe(df, ...)`**: Assigns calculated NumPy arrays back to the Pandas DataFrame as new columns (`revenue_normalized`, `revenue_zscore`, `revenue_rank`) and verifies shapes and dtypes.
+
