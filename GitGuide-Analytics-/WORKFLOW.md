@@ -90,3 +90,29 @@ Sprint deliverables and bugs are tracked using GitHub Issues.
   - **Label(s)**: Categorized with relevant tags (e.g., `enhancement`, `data-pipeline`, `feature`, `documentation`).
   - **Assignee**: Explicitly assigned to the team member responsible for execution.
 - **Lifecycle Closure**: Issues are automatically closed when their linked PR is merged into `main` (via `Closes #X`).
+
+---
+
+## 10. GroupBy Aggregation & Segment Insights Workflow (`scripts/segment_analysis.py`)
+
+This module executes multi-dimensional segment aggregations, 2D pivot tables, segment ranking, and actionable insight matrix generation for customer churn and revenue analytics.
+
+### Why GroupBy Segmentation Matters
+- **Exposes Hidden Variances**: Overall dataset averages can mask critical segment issues (e.g. an overall 5% churn average masking a 12% churn rate in SMB customers).
+- **Split-Apply-Combine Pattern**: Splitting data by keys, applying aggregation functions (`mean`, `sum`, `count`), and combining results into actionable matrices.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/segment_analysis.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_segment_dataset(num_rows, filepath)`**: Generates synthetic customer churn dataset across Enterprise, SMB, and Startup segments.
+- **`task1_single_level_groupby(df)`**: Aggregates churn rate, total revenue, customer count, and support tickets per `customer_type`.
+- **`task2_multi_level_groupby(df)`**: Performs multi-index aggregation across `['customer_type', 'product']` and unstacks results.
+- **`task3_pivot_table(df)`**: Creates 2D cross-tabulation of revenue by customer type and product using `pd.pivot_table()`.
+- **`task4_rank_and_identify_performers(segment_metrics)`**: Ranks segments by churn rate and computes revenue contribution percentage share.
+- **`task5_surface_actionable_insights(segment_metrics)`**: Evaluates business thresholds (>10% churn = High Priority intervention) and exports report to `output/segment_insights.csv`.
+
