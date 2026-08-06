@@ -480,6 +480,35 @@ This reads/generates bimodal revenue inputs from `data/raw/bimodal_revenue_datas
 1. **Target Feature Columns**: Update `column` parameters in `scripts/analyze_distributions.py` (e.g. `total_transactions`).
 2. **Adjust Segment Percentiles**: Modify quantile thresholds for segment comparisons (e.g. 90th percentile for top enterprise tiers).
 
+---
+
+## 19. Feature Correlation Analysis & Feature Selection (`scripts/analyze_correlations.py`)
+
+This module evaluates relationships across numerical features and target labels (e.g. customer churn). It calculates Pearson (linear) and Spearman (rank monotonic) correlation matrices, renders annotated heatmaps, isolates collinear feature pairs ($|r| > 0.7$), performs business causation analysis to avoid spurious conclusions, and drops redundant features.
+
+### How to Execute the Correlation Script
+Run the script from the project root:
+
+```bash
+python scripts/analyze_correlations.py
+```
+
+This reads/generates churn customer inputs from `data/raw/churn_customer_data.csv` (1,000 records), calculates Pearson and Spearman correlation matrices, renders a correlation heatmap to `output/correlation_heatmap.png`, performs causation analysis, drops redundant collinear variables (`engagement` when $r=0.92$ with `transactions_per_month`), exports clean feature sets to `data/processed/selected_uncorrelated_features.csv`, and writes an audit summary to `output/correlation_analysis_report.json`.
+
+### Correlation Principles & Causation vs. Correlation
+- **Pearson vs. Spearman (`compute_pearson_spearman`)**:
+  - **Pearson ($r$)**: Measures linear relationships between continuous variables.
+  - **Spearman ($\rho$)**: Measures monotonic relationships using rank order, making it robust against non-linear trends and extreme outliers.
+- **Correlation Heatmap Matrix (`plot_correlation_heatmap`)**: Uses `seaborn` (`sns.heatmap(..., annot=True, cmap='coolwarm', center=0)`) to render visual color gradients highlighting positive and negative feature associations.
+- **Collinearity & Redundancy Isolation (`find_strong_correlations`)**: Isolates feature pairs where $|r| > 0.7$. Highly correlated features (e.g. `engagement` vs `transactions_per_month` at $r=0.92$) introduce multi-collinearity issues in predictive models.
+- **Causation Confounder Analysis (`perform_causation_analysis`)**: Distinguishes correlation from causation. For example, `support_tickets` correlates $r=0.8$ with `churn`, but tickets do not cause churn—underlying `customer_pain` causes both support tickets and churn.
+- **Feature Selection (`select_uncorrelated_features`)**: Drops redundant collinear variables while preserving the most interpretable metrics, exporting clean datasets to `data/processed/selected_uncorrelated_features.csv`.
+
+### How to Configure for New Columns
+1. **Target Label Selection**: Modify `target_col` in `scripts/analyze_correlations.py` (e.g., `churn` or `lifetime_value`).
+2. **Adjust Collinearity Threshold**: Change `threshold` parameter in `find_strong_correlations()` (e.g., set to $0.8$ or $0.85$).
+
+
 
 
 

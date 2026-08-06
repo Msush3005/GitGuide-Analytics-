@@ -1,6 +1,6 @@
 # GitGuide Analytics - Exploratory Notebooks
 
-This directory contains interactive Jupyter Notebooks (`.ipynb`) used for exploratory data analysis (EDA), data cleaning trials, outlier detection visual checks, and feature engineering experimentation prior to production script modularization.
+This directory contains interactive Jupyter Notebooks (`.ipynb`) used for exploratory data analysis (EDA), data cleaning trials, outlier detection visual checks, feature engineering experimentation, and correlation matrix analysis prior to production script modularization.
 
 ## Notebook Index
 
@@ -16,3 +16,8 @@ This directory contains interactive Jupyter Notebooks (`.ipynb`) used for explor
    - Ratio Feature Construction (Time & Volume Normalization)
    - Equal-Width (`pd.cut`) & Equal-Frequency (`pd.qcut`) Binning Visualizations
    - Composite RFM (Recency, Frequency, Monetary) Customer Segmentation Scoring
+4. **`04_feature_correlation_and_causation.ipynb`**:
+   - Pearson (linear) vs. Spearman (monotonic) Correlation Matrix Comparisons
+   - Annotated Heatmap Visualizations (`output/correlation_heatmap.png`)
+   - High Collinear Pair Isolation ($|r| > 0.7$) & Business Causation Analysis
+   - Redundancy Feature Selection
