@@ -116,3 +116,29 @@ python scripts/segment_analysis.py
 - **`task4_rank_and_identify_performers(segment_metrics)`**: Ranks segments by churn rate and computes revenue contribution percentage share.
 - **`task5_surface_actionable_insights(segment_metrics)`**: Evaluates business thresholds (>10% churn = High Priority intervention) and exports report to `output/segment_insights.csv`.
 
+---
+
+## 11. Time-Series Trend & Rolling Metrics Workflow (`scripts/rolling_metrics.py`)
+
+This module executes temporal data analytics, smoothing daily volatility with rolling moving averages, resampling frequency periods, tracking cumulative sums, and evaluating growth momentum.
+
+### Why Time-Series Analysis Matters
+- **Filters Daily Volatility**: Raw daily revenue data contains noise and weekly seasonality; 7-day and 30-day rolling averages isolate true underlying business momentum.
+- **Prevents Reactive Decision-Making**: Evaluates trends rather than reacting to isolated single-day revenue drops.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/rolling_metrics.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_timeseries_dataset(num_days, filepath)`**: Generates 365 days of synthetic daily revenue and order data containing trend, weekly seasonality, and noise.
+- **`task1_resample_data(df)`**: Aggregates daily date-indexed data into weekly (`W`) and monthly (`ME`) frequency buckets using `sum()`, `count()`, and `mean()`.
+- **`task2_compute_rolling_averages(df)`**: Computes 7-day and 30-day moving averages and saves visual trend comparison to `output/rolling_avg.png`.
+- **`task3_calculate_mom_change(monthly_revenue)`**: Calculates Month-over-Month growth rates using `.pct_change() * 100`.
+- **`task4_compute_cumulative_sum(df)`**: Computes `.cumsum()` cumulative total revenue and exports plot to `output/cumulative.png`.
+- **`task5_identify_trend_and_implications(df, ...)`**: Evaluates recent 30-day rolling window direction (UP/DOWN/FLAT), calculates volatility, and exports structured business interpretation to `output/trend_analysis.txt`.
+
+
