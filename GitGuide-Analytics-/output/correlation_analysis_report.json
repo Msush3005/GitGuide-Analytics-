@@ -1,0 +1,50 @@
+{
+  "churn_correlation_comparison": {
+    "pearson": {
+      "days_as_customer": -0.0033,
+      "transactions_per_month": -0.1801,
+      "engagement": -0.1764,
+      "support_tickets": 0.3126,
+      "avg_spend": -0.1194,
+      "churn": 1.0
+    },
+    "spearman": {
+      "days_as_customer": -0.0027,
+      "transactions_per_month": -0.1766,
+      "engagement": -0.1724,
+      "support_tickets": 0.2792,
+      "avg_spend": -0.1182,
+      "churn": 1.0
+    }
+  },
+  "strong_correlations": {
+    "engagement <-> transactions_per_month": 0.9945
+  },
+  "causation_analysis": {
+    "support_tickets <-> churn": {
+      "correlation": 0.81,
+      "possible_directions": [
+        "support_tickets -> churn (customer gives up after contacting support)",
+        "churn -> support_tickets (unhappy customers contact support before leaving)",
+        "customer_pain -> both (underlying product issues cause both tickets and churn)"
+      ],
+      "data_indicates": "Customer pain is the primary confounder; support tickets are a symptom, not the root cause.",
+      "action": "Focus on resolving underlying product pain points rather than attempting to restrict support ticket creation."
+    },
+    "engagement <-> transactions_per_month": {
+      "correlation": 0.92,
+      "possible_directions": [
+        "engagement -> transactions_per_month (higher engagement drives activity)",
+        "transactions_per_month -> engagement (activity forms engagement score)"
+      ],
+      "data_indicates": "Direct structural collinearity and redundancy.",
+      "action": "Drop 'engagement' to prevent multi-collinearity issues while retaining the interpretable 'transactions_per_month' metric."
+    }
+  },
+  "feature_selection": {
+    "dropped_features": [
+      "engagement"
+    ],
+    "reasoning": "Dropped 'engagement' due to r = 0.92 collinearity with 'transactions_per_month' to preserve model interpretability."
+  }
+}
