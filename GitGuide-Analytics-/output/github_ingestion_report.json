@@ -1,0 +1,13 @@
+{
+  "repository": "Msush3005/GitGuide-Analytics-",
+  "stars": 0,
+  "forks": 0,
+  "total_contributors": 1,
+  "total_commits_fetched": 63,
+  "total_prs_fetched": 34,
+  "avg_pr_review_days": 0.0,
+  "single_commit_contributors": 0,
+  "raw_output_path": "C:\\Users\\prasa\\OneDrive\\Desktop\\GitGuide-Analytics-\\data\\raw\\fetched_github_repo_data.csv",
+  "processed_output_path": "C:\\Users\\prasa\\OneDrive\\Desktop\\GitGuide-Analytics-\\data\\processed\\fetched_github_repo_processed.csv",
+  "ingested_at": "2026-08-10 14:08:38"
+}
