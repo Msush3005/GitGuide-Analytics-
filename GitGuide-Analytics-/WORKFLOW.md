@@ -508,6 +508,89 @@ This reads/generates churn customer inputs from `data/raw/churn_customer_data.cs
 1. **Target Label Selection**: Modify `target_col` in `scripts/analyze_correlations.py` (e.g., `churn` or `lifetime_value`).
 2. **Adjust Collinearity Threshold**: Change `threshold` parameter in `find_strong_correlations()` (e.g., set to $0.8$ or $0.85$).
 
+---
+
+## 20. Python Streamlit Interactive Analytics Dashboard (`app.py`)
+
+The `app.py` module is the main Streamlit web dashboard for GitGuide Analytics. It provides four interactive pages:
+
+- **🏠 Home / Upload Page**: Dataset overview, contributor KPI metrics, activity chart.
+- **📊 Dashboard Analytics**: PR review timeline histogram, commit distribution, contributor role pie chart.
+- **🔍 Data Explorer**: Interactive filterable data table with CSV export capability.
+- **💡 Business Insights**: Key findings—churn risk profiles, top contributors, reviewer bottlenecks.
+
+### How to Start the Dashboard
+```bash
+streamlit run app.py
+```
+
+### Dataset Loading Priority
+1. **Live GitHub URL** → fetched and cached at `data/raw/fetched_github_repo_data.csv`
+2. **Manual CSV Upload** → via Streamlit sidebar file uploader
+3. **Default project dataset** → from `output/processed.csv` or `data/raw/sample.csv`
+
+---
+
+## 21. Live GitHub Repository URL Ingestion & CSV Auto-Creation (`scripts/github_repo_ingestion.py`)
+
+This module enables GitGuide Analytics to accept any public GitHub repository URL or `owner/repo` slug, fetch live contributor activity, PR review timelines, and commit history using the GitHub REST API, and generate a fully structured CSV dataset that feeds directly into the analytics dashboard.
+
+### Architecture
+
+```
+GitHub REST API  →  github_repo_ingestion.py  →  data/raw/fetched_github_repo_data.csv
+                                                →  data/processed/fetched_github_repo_processed.csv
+                                                →  output/github_ingestion_report.json
+```
+
+### Fetched Data Categories
+
+| Category | GitHub API Endpoint | Fields Captured |
+|---|---|---|
+| Commits | `/repos/{owner}/{repo}/commits` | sha, author login, message, timestamp |
+| Pull Requests | `/repos/{owner}/{repo}/pulls` | PR number, title, state, review days, lines changed |
+| Contributors | `/repos/{owner}/{repo}/contributors` | login, contributions count, role estimate |
+| Repo Metadata | `/repos/{owner}/{repo}` | stars, forks, full name |
+
+### Authentication & Rate Limits
+- **Without token**: 60 requests/hour (public IP rate limit)
+- **With token** (recommended): 5,000 requests/hour
+
+Set your GitHub Personal Access Token via the `GITHUB_TOKEN` environment variable:
+```bash
+# Windows PowerShell
+$env:GITHUB_TOKEN = "ghp_your_token_here"
+python scripts/github_repo_ingestion.py Msush3005/GitGuide-Analytics-
+```
+
+### Supported Input Formats
+```bash
+# Full URL
+python scripts/github_repo_ingestion.py https://github.com/facebook/react
+
+# Owner/repo slug
+python scripts/github_repo_ingestion.py Msush3005/GitGuide-Analytics-
+```
+
+### Streamlit Dashboard Integration
+The Streamlit sidebar includes a **"🔗 Live GitHub Repository"** text input and **"🚀 Fetch Live GitHub Data"** button. When clicked:
+1. `generate_csv_from_github_api()` is called with the provided URL.
+2. Data is saved to `data/raw/fetched_github_repo_data.csv`.
+3. The dashboard refreshes automatically with the live data.
+4. On subsequent visits, the previously fetched CSV is auto-loaded.
+
+### Generated Outputs
+
+| File | Description |
+|---|---|
+| `data/raw/fetched_github_repo_data.csv` | Raw merged contributor + PR dataset |
+| `data/processed/fetched_github_repo_processed.csv` | Processed, cleaned copy for pipeline |
+| `output/github_ingestion_report.json` | Audit report: timestamps, record counts, API stats |
+
+### How to Configure for New Repositories
+1. **Change max items**: Set `max_items` parameter in `generate_csv_from_github_api()` (default: 100 per category).
+2. **Add new API fields**: Extend the dictionaries in `fetch_github_repo_metrics()` with any additional GitHub REST API response fields.
+3. **Set authentication**: Always set `GITHUB_TOKEN` for private repos or high-volume ingestion.
 
 
 
