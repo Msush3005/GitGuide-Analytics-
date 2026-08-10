@@ -141,4 +141,30 @@ python scripts/rolling_metrics.py
 - **`task4_compute_cumulative_sum(df)`**: Computes `.cumsum()` cumulative total revenue and exports plot to `output/cumulative.png`.
 - **`task5_identify_trend_and_implications(df, ...)`**: Evaluates recent 30-day rolling window direction (UP/DOWN/FLAT), calculates volatility, and exports structured business interpretation to `output/trend_analysis.txt`.
 
+---
+
+## 15. Root Cause Investigation Workflow (`scripts/root_cause_analysis.py`)
+
+This module executes systematic anomaly investigation, isolating temporal boundaries, evaluating segment breakdowns, inspecting error logs via contingency crosstabs, and validating hypotheses against external status data.
+
+### Why Root Cause Investigation Matters
+- **Prevents Misdirected Actions**: Prevents reactive price cutting or unnecessary code rewrites when anomalies are caused by external provider outages.
+- **Quantifies Financial ROI**: Calculates annual net savings ($475k/year) achieved by implementing multi-processor failover redundancy.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/root_cause_analysis.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_anomaly_dataset(num_records, filepath)`**: Generates 10,000 transaction records containing a 50% revenue drop anomaly on 2025-01-15 14:00 UTC.
+- **`task1_isolate_time_window(df)`**: Detects anomaly dates below `mean - std` and pinpoints the worst hour (14:00 UTC).
+- **`task2_segment_analysis(df, ...)`**: Breaks down failure rates across `customer_type`, `payment_method`, and `region` to isolate payment method specificity.
+- **`task3_correlation_analysis(df, ...)`**: Computes `pd.crosstab` contingency matrices and identifies "Stripe API timeout" in 95% of failures.
+- **`task4_documentation_and_hypothesis(...)`**: Formulates high-confidence hypothesis and exports formal report to `investigation_report.txt` and `output/investigation_report.txt`.
+- **`task5_validation_of_hypothesis(...)`**: Validates timeline and segment alignment against external Stripe incident logs, exporting `output/hypothesis_validation.txt`.
+
+
 
