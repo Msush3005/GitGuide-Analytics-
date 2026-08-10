@@ -508,6 +508,48 @@ This reads/generates churn customer inputs from `data/raw/churn_customer_data.cs
 1. **Target Label Selection**: Modify `target_col` in `scripts/analyze_correlations.py` (e.g., `churn` or `lifetime_value`).
 2. **Adjust Collinearity Threshold**: Change `threshold` parameter in `find_strong_correlations()` (e.g., set to $0.8$ or $0.85$).
 
+---
+
+## 20. Python-Based Interactive Dashboard Framework (`app.py` & `scripts/dashboard_app.py`)
+
+This module provides a pure Python web dashboard framework built with **Streamlit** and **Plotly Express**. It implements a 4-section interactive flow allowing users to upload datasets, visualize commit activity and PR review timelines, explore and filter datasets, and view operational highlight callouts.
+
+### How to Launch the Streamlit Dashboard
+Run Streamlit from the project root:
+
+```bash
+streamlit run app.py
+```
+
+Or run the script entrypoint directly:
+
+```bash
+streamlit run scripts/dashboard_app.py
+```
+
+This launches a web application on `http://localhost:8501`.
+
+### 4-Page Navigation Flow Architecture
+1. **🏠 Home / Upload Page (`render_home_page`)**:
+   - Features a drag-and-drop CSV file uploader (`st.file_uploader`), automatically falling back to local project datasets (`output/processed.csv`) if no file is selected.
+   - Displays real-time metric cards for Total Records, Total Columns, Unique Contributor Count, Memory Usage Footprint (in MB), and head dataframe previews.
+2. **📊 Analytics Dashboard Page (`render_dashboard_page`)**:
+   - **Commit Activity Over Time**: Plotly Express area/line chart (`px.area`) tracking contributions over time.
+   - **Contributor Stats**: Grouped bar chart (`px.bar`) comparing commits and pull requests per contributor.
+   - **PR Review Timelines**: Scatter plot (`px.scatter`) correlating PR review duration in days against commit volume and code changes.
+   - **Role & Branch Usage**: Donut pie chart (`px.pie`) visualizing contributor role distributions (`Maintainer`, `Contributor`, `Reviewer`).
+3. **🔍 Data Explorer Page (`render_explorer_page`)**:
+   - Interactive data table with role dropdown multi-select filters and real-time text search inputs.
+   - Includes a single-click CSV exporter button (`st.download_button`) allowing users to download filtered datasets.
+4. **💡 Business Insights Page (`render_insights_page`)**:
+   - Highlight metrics cards (`st.metric`) displaying Average PR Review Duration (e.g. 3.2 days), Single-Commit Contributor Onboarding Alert ratios (20% single-committers), and Data Quality Health Scores (98.4%).
+   - Actionable text container callouts providing operational guidelines.
+
+### How to Custom-Configure Framework Components
+1. **Change Default Port**: Pass `--server.port` flag (e.g., `streamlit run app.py --server.port 8502`).
+2. **Add Custom Metrics**: Extend layout containers in `app.py` using Streamlit native widgets (`st.metric`, `st.plotly_chart`, `st.dataframe`).
+
+
 
 
 
