@@ -1,0 +1,24 @@
+============================================================
+BEHAVIOURAL ANALYSIS & USER SEGMENTATION REPORT
+============================================================
+
+1. TOP & BOTTOM PERFORMER ANALYSIS SUMMARY:
+- HIGHEST VALUE SEGMENT   : Enterprise ($149,473 Avg LTV)
+- HIGHEST CHURN SEGMENT   : SMB (10.6% Churn Rate)
+- BEST RETENTION SEGMENT  : Enterprise (1256 Days Avg Retention)
+
+
+2. SEGMENT STRATEGY SUMMARY & ACTION RECOMMENDATIONS:
+
+Enterprise Segment (5% of customer base, $149,473 LTV, 0.0% churn, 1256 days retention):
+- Highest value and strongest retention segment with low churn risk.
+- Action: Maintain high-touch account management, provide dedicated Customer Success Managers, and prioritize enterprise feature requests.
+
+SMB Segment (40% of customer base, $7,985 LTV, 10.6% churn, 424 days retention):
+- Middle-value segment suffering from an alarming 10.6% churn rate and high support ticket load (4.3 tickets/cust).
+- Action: HIGH PRIORITY INTERVENTION — Improve onboarding workflows, introduce self-service support tools, and offer affordable premium support packages.
+
+Startup Segment (55% of customer base, $1,994 LTV, 6.9% churn, 278 days retention):
+- Highest volume, lower individual value segment with moderate churn.
+- Action: Deploy automated self-service documentation, community forums, and automated email nurturing sequences to minimize support costs.
+============================================================

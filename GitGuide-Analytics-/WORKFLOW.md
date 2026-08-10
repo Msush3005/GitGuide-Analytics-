@@ -141,4 +141,30 @@ python scripts/rolling_metrics.py
 - **`task4_compute_cumulative_sum(df)`**: Computes `.cumsum()` cumulative total revenue and exports plot to `output/cumulative.png`.
 - **`task5_identify_trend_and_implications(df, ...)`**: Evaluates recent 30-day rolling window direction (UP/DOWN/FLAT), calculates volatility, and exports structured business interpretation to `output/trend_analysis.txt`.
 
+---
+
+## 12. Behavioral Analysis & User Segmentation Workflow (`scripts/segment_behavior.py`)
+
+This module executes comparative user segmentation analytics across Enterprise, SMB, and Startup categories, rendering min-max normalized heatmaps, ranking segment metrics, and surfacing tailored strategic recommendations.
+
+### Why User Segmentation Matters
+- **Eliminates Flawed Averages**: Aggregate reporting masks segment performance (e.g. Enterprise $150k LTV vs Startup $2k LTV).
+- **Enables Data-Driven Resource Allocation**: Directs high-touch support to high-value customers while providing automated self-service tools for high-volume, lower-LTV segments.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/segment_behavior.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_behavioral_dataset(num_rows, filepath)`**: Generates 1,000 synthetic customer records categorized across Enterprise, SMB, and Startup segments.
+- **`task1_define_segments_and_compute_metrics(df)`**: Aggregates `avg_ltv`, `churn_rate`, `avg_tickets`, `avg_retention`, and sample `count` per segment.
+- **`task2_summary_statistics_table(segment_metrics)`**: Ranks segments by LTV and Churn, producing formatted currency and percentage tables.
+- **`task3_visual_comparison_heatmap(segment_metrics)`**: Generates min-max scaled Seaborn comparison heatmap exported to `output/segment_heatmap.png`.
+- **`task4_top_and_bottom_performers(segment_metrics)`**: Identifies top performer by LTV, worst by churn, and best by retention days.
+- **`task5_business_facing_insights(segment_metrics, ...)`**: Formulates actionable 2-3 sentence business strategies per segment and exports report to `output/segment_behavior_summary.txt`.
+
+
 
