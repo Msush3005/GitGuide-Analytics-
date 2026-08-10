@@ -1,0 +1,32 @@
+{
+  "mau": {
+    "min": 5000,
+    "max": 6000,
+    "unit": "customers",
+    "description": "Monthly Active Users"
+  },
+  "revenue_per_customer": {
+    "min": 90.0,
+    "max": 110.0,
+    "unit": "currency_usd",
+    "description": "Average Revenue per Customer"
+  },
+  "churn_rate": {
+    "min": 0.0,
+    "max": 0.05,
+    "unit": "percentage",
+    "description": "Monthly Customer Churn Rate"
+  },
+  "payment_success_rate": {
+    "min": 0.95,
+    "max": 1.0,
+    "unit": "percentage",
+    "description": "Payment Transaction Success Rate"
+  },
+  "customer_acquisition_cost": {
+    "min": 0.0,
+    "max": 50.0,
+    "unit": "currency_usd",
+    "description": "Customer Acquisition Cost"
+  }
+}

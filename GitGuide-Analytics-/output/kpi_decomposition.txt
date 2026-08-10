@@ -1,0 +1,25 @@
+============================================================
+KPI DECOMPOSITION HIERARCHY REPORT
+============================================================
+
+LEVEL 1 (Top-Level Business Metric):
+  - Total Monthly Revenue : $1,815,514.26
+
+LEVEL 2 (Breakdown by Customer Segment):
+  - Enterprise Segment    : $558,062.99 (30.7%)
+  - SMB Segment           : $770,563.50 (42.4%)
+  - Startup Segment       : $486,887.77 (26.8%)
+
+LEVEL 3 (Detailed Product Breakdown per Segment):
+  - [Enterprise] Analytics Suite   : $189,350.71 (10.4% of total)
+  - [Enterprise] Cloud Pro         : $179,455.37 (9.9% of total)
+  - [Enterprise] Enterprise Core   : $189,256.91 (10.4% of total)
+  - [SMB       ] Analytics Suite   : $259,738.41 (14.3% of total)
+  - [SMB       ] Cloud Pro         : $259,303.85 (14.3% of total)
+  - [SMB       ] Enterprise Core   : $251,521.24 (13.9% of total)
+  - [Startup   ] Analytics Suite   : $159,933.45 (8.8% of total)
+  - [Startup   ] Cloud Pro         : $167,274.70 (9.2% of total)
+  - [Startup   ] Enterprise Core   : $159,679.62 (8.8% of total)
+
+VERIFICATION: Sub-component sum ($1,815,514.26) == Total Revenue ($1,815,514.26)
+============================================================

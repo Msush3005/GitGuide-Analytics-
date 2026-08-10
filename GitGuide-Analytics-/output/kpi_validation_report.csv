@@ -1,0 +1,6 @@
+kpi_key,kpi_description,actual_raw,actual_formatted,target_min,target_max,target_formatted,status
+mau,Monthly Active Users,5292.0,"5,292",5000.0,6000.0,"5,000 - 6,000",PASS
+revenue_per_customer,Average Revenue per Customer,330.09350181818184,$330.09,90.0,110.0,$90.00 - $110.00,ALERT
+churn_rate,Monthly Customer Churn Rate,0.03768382352941176,3.77%,0.0,0.05,0.00% - 5.00%,PASS
+payment_success_rate,Payment Transaction Success Rate,0.9817836284416427,98.18%,0.95,1.0,95.00% - 100.00%,PASS
+customer_acquisition_cost,Customer Acquisition Cost,26.38909090909091,$26.39,0.0,50.0,$0.00 - $50.00,PASS

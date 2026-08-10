@@ -141,4 +141,28 @@ python scripts/rolling_metrics.py
 - **`task4_compute_cumulative_sum(df)`**: Computes `.cumsum()` cumulative total revenue and exports plot to `output/cumulative.png`.
 - **`task5_identify_trend_and_implications(df, ...)`**: Evaluates recent 30-day rolling window direction (UP/DOWN/FLAT), calculates volatility, and exports structured business interpretation to `output/trend_analysis.txt`.
 
+---
+
+## 14. KPI Definition & Business Metric Design Workflow (`scripts/kpi_engine.py`)
+
+This module establishes version-controlled KPI architecture under `/kpis/`, implementing reusable calculation functions, JSON validation target ranges, 3-level metric decomposition, and automated status reporting.
+
+### Why KPI Architecture Matters
+- **Single Source of Truth**: Resolves cross-team metric discrepancies (Finance vs Sales vs Product) by formalizing definitions in `kpis/kpi_reference.md`.
+- **Automated Target Alerting**: Evaluates computed actuals against target JSON ranges (`kpis/kpi_validation_targets.json`) to trigger immediate alerts when metrics fall out of range.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/kpi_engine.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_kpi_dataset(num_customers, filepath)`**: Generates synthetic transaction records for 5,500 active customers.
+- **`task2_compute_kpis(df)`**: Computes MAU, RPC, Churn Rate, Payment Success Rate, and CAC using imported functions from `kpis.kpi_functions`.
+- **`task3_validate_against_targets(current_kpis, targets_filepath)`**: Compares actuals against target JSON bounds and exports status report to `output/kpi_validation_report.csv`.
+- **`task4_kpi_decomposition(df)`**: Decomposes total revenue across customer segments and products, exporting report to `output/kpi_decomposition.txt`.
+
+
 
