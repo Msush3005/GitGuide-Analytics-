@@ -1,0 +1,6 @@
+from_stage,to_stage,users_before,users_after,users_lost,completion_rate,drop_rate,drop_pct_num
+Sign Up,Email Entered,10000,8000,2000,80.0%,20.0%,20.0
+Email Entered,Password Created,8000,6000,2000,75.0%,25.0%,25.0
+Password Created,Email Verified,6000,5000,1000,83.3%,16.7%,16.666666666666664
+Email Verified,Payment Added,5000,4000,1000,80.0%,20.0%,20.0
+Payment Added,First Purchase,4000,2000,2000,50.0%,50.0%,50.0

@@ -141,4 +141,30 @@ python scripts/rolling_metrics.py
 - **`task4_compute_cumulative_sum(df)`**: Computes `.cumsum()` cumulative total revenue and exports plot to `output/cumulative.png`.
 - **`task5_identify_trend_and_implications(df, ...)`**: Evaluates recent 30-day rolling window direction (UP/DOWN/FLAT), calculates volatility, and exports structured business interpretation to `output/trend_analysis.txt`.
 
+---
+
+## 13. Funnel Analysis & Drop-Off Detection Workflow (`scripts/funnel_analysis.py`)
+
+This module executes sequential conversion funnel tracking across 6 stages, computing drop-off percentages, rendering volume bar charts, quantifying revenue impacts, and formulating A/B test recommendations.
+
+### Why Funnel Analysis Matters
+- **Locates Process Friction**: Identifies the exact step where users drop off rather than relying on an overall end-to-end conversion average.
+- **Data-Driven Engineering Priorities**: Ranks product bottlenecks by financial revenue impact ($100 per lost user) to direct development resources where ROI is highest.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/funnel_analysis.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_funnel_dataset(num_users, filepath)`**: Generates synthetic conversion flags for 10,000 users across 6 sequential stages.
+- **`task1_define_funnel_stages(df)`**: Counts user volumes across all 6 stages (`Sign Up` through `First Purchase`).
+- **`task2_compute_drop_off_rates(stages)`**: Calculates `users_lost`, `completion_rate`, `drop_rate`, and identifies the primary bottleneck.
+- **`task3_visualize_funnel(stages)`**: Renders and exports an annotated, color-coded funnel volume bar chart to `output/funnel_chart.png`.
+- **`task4_calculate_business_impact(funnel_df)`**: Calculates potential revenue loss (`users_lost * $100`) and ranks bottlenecks by financial priority.
+- **`task5_actionable_recommendations(funnel_df)`**: Formulates UX root cause hypotheses, A/B test rollout strategies, and 10% fix revenue impact projections, exporting the report to `output/funnel_analysis.txt`.
+
+
 
