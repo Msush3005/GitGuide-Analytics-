@@ -23,6 +23,31 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timezone
 
+# ── Windows UTF-8 stdout fix ─────────────────────────────────────────────────
+# Reconfigure stdout to UTF-8 at module level so emoji in print() don't crash
+# when the module is imported by Streamlit on Windows (charmap codec).
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
+
+def safe_print(*args, **kwargs):
+    """Print with emoji-safe fallback for Windows consoles that lack UTF-8."""
+    try:
+        print(*args, **kwargs)
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        # Strip non-ASCII and retry
+        safe_args = [
+            a.encode("ascii", errors="replace").decode("ascii")
+            if isinstance(a, str) else a
+            for a in args
+        ]
+        print(*safe_args, **kwargs)
+
 # GitHub API base URL
 GITHUB_API_BASE = "https://api.github.com"
 
@@ -88,12 +113,12 @@ def _github_request(endpoint, max_items=100):
                 data = json.loads(res.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code == 403:
-                print("⚠️  GitHub API rate limit reached. Set GITHUB_TOKEN env variable to increase limit.")
+                safe_print("[!!] GitHub API rate limit reached. Set GITHUB_TOKEN env variable to increase limit.")
             elif e.code == 404:
-                print(f"⚠️  Repository not found or private: {endpoint}")
+                safe_print(f"[!!] Repository not found or private: {endpoint}")
             return results
         except Exception as e:
-            print(f"⚠️  API request failed: {e}")
+            safe_print(f"[!!] API request failed: {e}")
             return results
 
         if not data or not isinstance(data, list):
@@ -122,7 +147,7 @@ def fetch_github_repo_metrics(owner, repo, max_items=100):
     Returns:
         tuple: (commits_df, prs_df, contributors_df, repo_meta)
     """
-    print(f"\n📡 Fetching GitHub Repository: {owner}/{repo}")
+    safe_print(f"\n[>>] Fetching GitHub Repository: {owner}/{repo}")
 
     # 1. Repo metadata
     try:
@@ -134,13 +159,13 @@ def fetch_github_repo_metrics(owner, repo, max_items=100):
             req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
         with urllib.request.urlopen(req, timeout=15) as res:
             repo_meta = json.loads(res.read().decode("utf-8"))
-        print(f"  ✓ Repository: {repo_meta.get('full_name')} | Stars: {repo_meta.get('stargazers_count', 0):,} | Forks: {repo_meta.get('forks_count', 0):,}")
+        safe_print(f"  [OK] Repository: {repo_meta.get('full_name')} | Stars: {repo_meta.get('stargazers_count', 0):,} | Forks: {repo_meta.get('forks_count', 0):,}")
     except Exception as e:
-        print(f"  ⚠️  Could not fetch repo metadata: {e}")
+        safe_print(f"  [!!] Could not fetch repo metadata: {e}")
         repo_meta = {"full_name": f"{owner}/{repo}", "stargazers_count": 0, "forks_count": 0}
 
     # 2. Commits
-    print(f"  📥 Fetching commits (up to {max_items})...")
+    safe_print(f"  [..] Fetching commits (up to {max_items})...")
     commits_raw = _github_request(f"/repos/{owner}/{repo}/commits", max_items=max_items)
     commits_rows = []
     for c in commits_raw:
@@ -154,10 +179,10 @@ def fetch_github_repo_metrics(owner, repo, max_items=100):
             "commit_url": c.get("html_url", "")
         })
     commits_df = pd.DataFrame(commits_rows)
-    print(f"  ✓ Fetched {len(commits_df)} commits")
+    safe_print(f"  [OK] Fetched {len(commits_df)} commits")
 
     # 3. Pull Requests
-    print(f"  📥 Fetching pull requests (up to {max_items})...")
+    safe_print(f"  [..] Fetching pull requests (up to {max_items})...")
     prs_raw = _github_request(f"/repos/{owner}/{repo}/pulls", max_items=max_items)
     prs_rows = []
     for pr in prs_raw:
@@ -184,10 +209,10 @@ def fetch_github_repo_metrics(owner, repo, max_items=100):
             "pr_url": pr.get("html_url", "")
         })
     prs_df = pd.DataFrame(prs_rows)
-    print(f"  ✓ Fetched {len(prs_df)} pull requests")
+    safe_print(f"  [OK] Fetched {len(prs_df)} pull requests")
 
     # 4. Contributors
-    print(f"  📥 Fetching contributors (up to {max_items})...")
+    safe_print(f"  [..] Fetching contributors (up to {max_items})...")
     contribs_raw = _github_request(f"/repos/{owner}/{repo}/contributors", max_items=max_items)
     contribs_rows = []
     for i, c in enumerate(contribs_raw):
@@ -199,7 +224,7 @@ def fetch_github_repo_metrics(owner, repo, max_items=100):
             "profile_url": c.get("html_url", "")
         })
     contributors_df = pd.DataFrame(contribs_rows)
-    print(f"  ✓ Fetched {len(contributors_df)} contributors")
+    safe_print(f"  [OK] Fetched {len(contributors_df)} contributors")
 
     return commits_df, prs_df, contributors_df, repo_meta
 
@@ -226,9 +251,9 @@ def generate_csv_from_github_api(repo_input, output_dir=None):
 
     # Parse URL/slug
     owner, repo = parse_github_url(repo_input)
-    print(f"\n{'='*60}")
-    print(f"GITHUB REPOSITORY INGESTION: {owner}/{repo}")
-    print(f"{'='*60}")
+    safe_print(f"\n{'='*60}")
+    safe_print(f"GITHUB REPOSITORY INGESTION: {owner}/{repo}")
+    safe_print(f"{'='*60}")
 
     # Fetch live data
     commits_df, prs_df, contributors_df, repo_meta = fetch_github_repo_metrics(owner, repo, max_items=100)
@@ -258,8 +283,8 @@ def generate_csv_from_github_api(repo_input, output_dir=None):
     # Save raw output
     df_merged.to_csv(raw_path, index=False)
     df_merged.to_csv(processed_path, index=False)
-    print(f"\n✓ Saved raw dataset ({len(df_merged)} contributors) to: {raw_path}")
-    print(f"✓ Saved processed dataset to: {processed_path}")
+    safe_print(f"\n[OK] Saved raw dataset ({len(df_merged)} contributors) to: {raw_path}")
+    safe_print(f"[OK] Saved processed dataset to: {processed_path}")
 
     # Build audit report
     report = {
@@ -279,23 +304,17 @@ def generate_csv_from_github_api(repo_input, output_dir=None):
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
-    print(f"✓ Saved ingestion audit report to: {report_path}")
-    print(json.dumps(report, indent=2))
-    print(f"\n{'='*60}")
+    safe_print(f"[OK] Saved ingestion audit report to: {report_path}")
+    safe_print(json.dumps(report, indent=2))
+    safe_print(f"\n{'='*60}")
 
     return df_merged, report
 
 
 if __name__ == "__main__":
-    if hasattr(sys.stdout, "reconfigure"):
-        try:
-            sys.stdout.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
-
     if len(sys.argv) < 2:
-        print("Usage: python scripts/github_repo_ingestion.py <github_url_or_owner/repo>")
-        print("Example: python scripts/github_repo_ingestion.py Msush3005/GitGuide-Analytics-")
+        safe_print("Usage: python scripts/github_repo_ingestion.py <github_url_or_owner/repo>")
+        safe_print("Example: python scripts/github_repo_ingestion.py Msush3005/GitGuide-Analytics-")
         sys.exit(1)
 
     repo_input = sys.argv[1]
