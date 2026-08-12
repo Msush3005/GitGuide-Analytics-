@@ -167,7 +167,9 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 
 # Plotly shared dark theme
-PLOTLY_LAYOUT = dict(
+# Shared Plotly dark theme — does NOT include 'title' so it can be passed
+# per-chart without causing 'multiple values for keyword argument title'.
+_PLOTLY_BASE = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor ="rgba(255,255,255,0.02)",
     font=dict(family="Inter", color="#94a3b8", size=12),
@@ -176,8 +178,19 @@ PLOTLY_LAYOUT = dict(
     margin=dict(t=42, b=32, l=16, r=16),
     legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color="#94a3b8")),
     hoverlabel=dict(bgcolor="#1e293b", bordercolor="rgba(99,102,241,0.4)", font=dict(color="#e2e8f0")),
-    title=dict(font=dict(size=14, color="#e2e8f0"), x=0.01),
 )
+
+
+def plot_layout(title="", **overrides):
+    """Return a merged Plotly layout dict with a per-chart title."""
+    layout = dict(_PLOTLY_BASE)
+    layout["title"] = dict(text=title, font=dict(size=14, color="#e2e8f0"), x=0.01)
+    layout.update(overrides)
+    return layout
+
+
+# Keep PLOTLY_LAYOUT as alias so any leftover references still work
+PLOTLY_LAYOUT = _PLOTLY_BASE
 PALETTE = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#ec4899"]
 
 
@@ -381,7 +394,7 @@ def render_analytics(df):
                 fillcolor="rgba(99,102,241,0.12)",
                 hovertemplate="<b>%{x}</b><br>Commits: %{y}<extra></extra>"
             ))
-            fig.update_layout(**PLOTLY_LAYOUT, title="Total Commits Over Time")
+            fig.update_layout(**plot_layout("Total Commits Over Time"))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No timestamp column found.")
@@ -401,8 +414,9 @@ def render_analytics(df):
                     marker_color=colors_bar[i],
                     hovertemplate="<b>%{x}</b><br>" + col + ": %{y}<extra></extra>"
                 ))
-            fig.update_layout(**PLOTLY_LAYOUT, barmode="group", title="Contributor Activity",
-                              xaxis=dict(**PLOTLY_LAYOUT["xaxis"], tickangle=-30))
+            fig.update_layout(**plot_layout("Contributor Activity",
+                              barmode="group",
+                              xaxis=dict(**_PLOTLY_BASE["xaxis"], tickangle=-30)))
             st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
@@ -419,7 +433,7 @@ def render_analytics(df):
                 color_discrete_sequence=PALETTE,
             )
             fig.update_traces(marker=dict(opacity=0.82, line=dict(width=1, color="rgba(255,255,255,0.1)")))
-            fig.update_layout(**PLOTLY_LAYOUT, title="PR Review Duration vs Commit Count")
+            fig.update_layout(**plot_layout("PR Review Duration vs Commit Count"))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No PR review duration column detected.")
@@ -438,7 +452,7 @@ def render_analytics(df):
                 textfont=dict(color="#e2e8f0", size=12),
                 hovertemplate="<b>%{label}</b><br>Count: %{value}<br>Share: %{percent}<extra></extra>"
             ))
-            fig.update_layout(**PLOTLY_LAYOUT, title="Role Distribution", showlegend=False)
+            fig.update_layout(**plot_layout("Role Distribution", showlegend=False))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No role or branch column detected.")
@@ -452,7 +466,7 @@ def render_analytics(df):
         if target_col:
             fig = px.histogram(df, x=target_col, nbins=20, color_discrete_sequence=["#8b5cf6"])
             fig.update_traces(marker_line_color="rgba(0,0,0,0)", opacity=0.85)
-            fig.update_layout(**PLOTLY_LAYOUT, title=target_col.replace("_", " ").title() + " Frequency")
+            fig.update_layout(**plot_layout(target_col.replace("_", " ").title() + " Frequency"))
             st.plotly_chart(fig, use_container_width=True)
 
     with col6:
@@ -460,7 +474,7 @@ def render_analytics(df):
         if review_col:
             fig = px.box(df, y=review_col, color=role_col, color_discrete_sequence=PALETTE, points="all")
             fig.update_traces(marker=dict(opacity=0.65, size=5))
-            fig.update_layout(**PLOTLY_LAYOUT, title="PR Review Days by Role")
+            fig.update_layout(**plot_layout("PR Review Days by Role"))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No PR review duration column found.")
@@ -605,14 +619,14 @@ def render_insights(df):
                 marker=dict(color=PALETTE[:len(df_role)]),
                 hovertemplate="<b>%{x}</b><br>Total: %{y}<extra></extra>"
             ))
-            fig.update_layout(**PLOTLY_LAYOUT, title="Total Commits by Contributor Role", showlegend=False)
+            fig.update_layout(**plot_layout("Total Commits by Contributor Role", showlegend=False))
             st.plotly_chart(fig, use_container_width=True)
 
         if review_col and role_col:
             st.markdown(section_title("PR Review Days by Role", "Median review times across contributor tiers"), unsafe_allow_html=True)
             fig2 = px.violin(df, y=review_col, x=role_col, color=role_col,
                              color_discrete_sequence=PALETTE, box=True, points="outliers")
-            fig2.update_layout(**PLOTLY_LAYOUT, showlegend=False, title="PR Review Duration by Role")
+            fig2.update_layout(**plot_layout("PR Review Duration by Role", showlegend=False))
             st.plotly_chart(fig2, use_container_width=True)
 
 
