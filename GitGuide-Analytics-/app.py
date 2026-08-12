@@ -331,7 +331,7 @@ def render_overview(df):
 
     commit_col      = next((c for c in ["commits_count","commits","total_contributions"] if c in df.columns), df.select_dtypes(include=np.number).columns[0] if len(df.select_dtypes(include=np.number).columns) else None)
     contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in df.columns), df.columns[0])
-    review_col      = next((c for c in ["pr_review_days","review_days"] if c in df.columns), None)
+    review_col      = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in df.columns), None)
 
     total_commits   = int(df[commit_col].sum()) if commit_col else "N/A"
     unique_contribs = df[contributor_col].nunique()
@@ -373,10 +373,10 @@ def render_analytics(df):
     commit_col      = next((c for c in ["commits_count","commits","total_contributions"] if c in df.columns), df.select_dtypes(include=np.number).columns[0] if len(df.select_dtypes(include=np.number).columns) else None)
     contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in df.columns), df.columns[0])
     pr_col          = next((c for c in ["pull_requests_opened","prs"] if c in df.columns), None)
-    review_col      = next((c for c in ["pr_review_days","review_days"] if c in df.columns), None)
+    review_col      = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in df.columns), None)
     role_col        = next((c for c in ["contributor_role","role","branch"] if c in df.columns), None)
     time_col        = next((c for c in ["timestamp","date","created_at"] if c in df.columns), None)
-    lines_col       = next((c for c in ["lines_changed","lines"] if c in df.columns), None)
+    lines_col       = next((c for c in ["avg_lines_changed","lines_changed","lines"] if c in df.columns), None)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -520,7 +520,7 @@ def render_explorer(df):
         if commit_col and commit_col in filtered.columns and len(filtered):
             st.markdown(glass_metric("&#128190;", "FILTERED COMMITS", "{:,}".format(int(filtered[commit_col].sum())), "", "positive"), unsafe_allow_html=True)
     with cs3:
-        review_col = "pr_review_days" if "pr_review_days" in filtered.columns else None
+        review_col = next((c for c in ["avg_pr_review_days", "pr_review_days", "review_days"] if c in filtered.columns), None)
         if review_col and len(filtered):
             st.markdown(glass_metric("&#9201;", "AVG PR REVIEW", "{:.1f}d".format(filtered[review_col].mean()), "", "neutral"), unsafe_allow_html=True)
     with cs4:
@@ -546,27 +546,30 @@ def render_insights(df):
     st.markdown('<div class="page-subheader">Automated insights on PR velocity, contributor onboarding friction, and data health.</div>', unsafe_allow_html=True)
 
     commit_col = next((c for c in ["commits_count","commits"] if c in df.columns), None)
-    review_col = next((c for c in ["pr_review_days","review_days"] if c in df.columns), None)
+    review_col = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in df.columns), None)
     role_col   = next((c for c in ["contributor_role","role"] if c in df.columns), None)
 
-    avg_review   = df[review_col].mean() if review_col else 3.2
-    pct_slow     = ((df[review_col] > 5).mean() * 100) if review_col else 15.0
-    pct_single   = ((df[commit_col] == 1).mean() * 100) if commit_col else 20.0
-    null_rate    = (df.isnull().sum().sum() / (len(df) * len(df.columns)) * 100)
+    avg_review   = round(df[review_col].mean(), 2) if review_col else None
+    pct_slow     = round((df[review_col] > 5).mean() * 100, 1) if review_col else None
+    pct_single   = round((df[commit_col] == 1).mean() * 100, 1) if commit_col else None
+    null_rate    = round(df.isnull().sum().sum() / (len(df) * len(df.columns)) * 100, 2)
     health_score = round(100 - null_rate, 1)
 
     ci1, ci2, ci3, ci4 = st.columns(4)
     with ci1:
-        dt = "positive" if avg_review < 3 else ("negative" if avg_review > 5 else "neutral")
-        st.markdown(glass_metric("&#9201;", "AVG PR REVIEW TIME", "{:.1f} days".format(avg_review), "Target &lt; 3 days", dt), unsafe_allow_html=True)
+        val = "{:.2f} days".format(avg_review) if avg_review is not None else "N/A"
+        dt  = ("positive" if avg_review < 3 else ("negative" if avg_review > 5 else "neutral")) if avg_review is not None else "neutral"
+        st.markdown(glass_metric("&#9201;", "AVG PR REVIEW TIME", val, "Target &lt; 3 days", dt), unsafe_allow_html=True)
     with ci2:
-        dt = "negative" if pct_slow > 20 else "neutral"
-        st.markdown(glass_metric("&#9203;", "PRs &gt; 5 DAYS", "{:.1f}%".format(pct_slow), "Reviewer bottleneck", dt), unsafe_allow_html=True)
+        val = "{:.1f}%".format(pct_slow) if pct_slow is not None else "N/A"
+        dt  = "negative" if (pct_slow or 0) > 20 else "neutral"
+        st.markdown(glass_metric("&#9203;", "PRs &gt; 5 DAYS", val, "Reviewer bottleneck", dt), unsafe_allow_html=True)
     with ci3:
-        dt = "negative" if pct_single > 25 else "neutral"
-        st.markdown(glass_metric("&#128100;", "SINGLE-COMMIT %", "{:.1f}%".format(pct_single), "Onboarding friction", dt), unsafe_allow_html=True)
+        val = "{:.1f}%".format(pct_single) if pct_single is not None else "N/A"
+        dt  = "negative" if (pct_single or 0) > 25 else "neutral"
+        st.markdown(glass_metric("&#128100;", "SINGLE-COMMIT %", val, "Onboarding friction", dt), unsafe_allow_html=True)
     with ci4:
-        dt = "positive" if health_score >= 95 else ("negative" if health_score < 80 else "neutral")
+        dt  = "positive" if health_score >= 95 else ("negative" if health_score < 80 else "neutral")
         st.markdown(glass_metric("&#129657;", "DATA HEALTH SCORE", "{}%".format(health_score), "Null field analysis", dt), unsafe_allow_html=True)
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
@@ -575,19 +578,23 @@ def render_insights(df):
     with left:
         st.markdown(section_title("Key Findings", "Automated operational insights"), unsafe_allow_html=True)
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown("""
+        avg_str = "{:.1f} days".format(avg_review) if avg_review is not None else "N/A"
+        slow_str = "{:.0f}%".format(pct_slow) if pct_slow is not None else "N/A"
+        single_str = "{:.0f}%".format(pct_single) if pct_single is not None else "N/A"
+
+        st.markdown(f"""
         <div class="insight-card blue">
             <div class="insight-label" style="color:#60a5fa">PR Review Velocity</div>
             <div class="insight-text">
-                Average PR review turnaround is <b style="color:#e2e8f0">{:.1f} days</b>.
-                <b style="color:#ef4444">{:.0f}%</b> of PRs exceed 5 days &#8212;
+                Average PR review turnaround is <b style="color:#e2e8f0">{avg_str}</b>.
+                <b style="color:#ef4444">{slow_str}</b> of PRs exceed 5 days &#8212;
                 indicating potential reviewer bandwidth constraints.
             </div>
         </div>
         <div class="insight-card amber">
             <div class="insight-label" style="color:#fbbf24">Onboarding Friction Alert</div>
             <div class="insight-text">
-                <b style="color:#e2e8f0">{:.0f}%</b> of contributors submitted
+                <b style="color:#e2e8f0">{single_str}</b> of contributors submitted
                 only 1 commit before going inactive. Simplify dev environment setup
                 and add contributor-friendly issue labels.
             </div>
@@ -595,8 +602,8 @@ def render_insights(df):
         <div class="insight-card green">
             <div class="insight-label" style="color:#34d399">Data Quality</div>
             <div class="insight-text">
-                Dataset health score: <b style="color:#e2e8f0">{}%</b>.
-                Null rate: <b>{:.2f}%</b>. All validation rules passed.
+                Dataset health score: <b style="color:#e2e8f0">{health_score}%</b>.
+                Null rate: <b>{null_rate:.2f}%</b>. All validation rules passed.
             </div>
         </div>
         <div class="insight-card purple">
@@ -606,7 +613,7 @@ def render_insights(df):
                 Target: reduce single-commit dropout by 40% within 2 sprint cycles.
             </div>
         </div>
-        """.format(avg_review, pct_slow, pct_single, health_score, null_rate), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     with right:
         st.markdown(section_title("Commit Distribution by Role", "Who contributes the most code volume"), unsafe_allow_html=True)
