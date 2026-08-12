@@ -1,6 +1,6 @@
 """
 GitGuide Analytics - Premium Streamlit Dashboard
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 Dark glassmorphism UI with animated metric cards, gradient headers,
 interactive Plotly charts, live GitHub ingestion, and contributor analytics.
 
@@ -10,27 +10,41 @@ Usage:
 
 import os
 import sys
+import asyncio
 import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+
+# ── Python 3.12+ / 3.13 asyncio compatibility fix ────────────────────────────
+# Streamlit 1.61 uses a thread-based script runner that calls
+# event_loop.call_soon_threadsafe() after the script finishes.
+# On Python 3.12+ the default ProactorEventLoop (Windows) closes before
+# that callback fires, causing: RuntimeError: Event loop is closed.
+# Fix: switch to a SelectorEventLoop which handles this correctly.
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception:
+        pass
+
 import streamlit as st
 
-# ── Path setup ────────────────────────────────────────────────────────────────
+# â”€â”€ Path setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 BASE_DIR    = os.path.abspath(os.path.dirname(__file__))
 SCRIPTS_DIR = os.path.join(BASE_DIR, "scripts")
 if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
-# ── Page config ───────────────────────────────────────────────────────────────
+# â”€â”€ Page config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 st.set_page_config(
     page_title="GitGuide Analytics",
-    page_icon="🔭",
+    page_icon="ðŸ”­",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ── Global CSS: dark glassmorphism design system ──────────────────────────────
+# â”€â”€ Global CSS: dark glassmorphism design system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 st.markdown("""
 <style>
 /* ---- Google Font ---- */
@@ -275,7 +289,7 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 
-# ── Plotly shared dark theme ──────────────────────────────────────────────────
+# â”€â”€ Plotly shared dark theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor ="rgba(255,255,255,0.02)",
@@ -289,12 +303,12 @@ PLOTLY_LAYOUT = dict(
 PALETTE = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#ec4899"]
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def glass_metric(icon, label, value, delta=None, delta_type="neutral"):
     delta_html = ""
     if delta:
         cls = f"delta-{delta_type}"
-        arrow = "▲" if delta_type == "positive" else ("▼" if delta_type == "negative" else "●")
+        arrow = "â–²" if delta_type == "positive" else ("â–¼" if delta_type == "negative" else "â—")
         delta_html = f'<span class="card-delta {cls}">{arrow} {delta}</span>'
     return f"""
     <div class="glass-card">
@@ -349,11 +363,11 @@ def load_default_dataset():
     })
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def render_sidebar():
     st.sidebar.markdown("""
     <div class="sidebar-logo">
-        <span style="font-size:1.6rem">🔭</span>
+        <span style="font-size:1.6rem">ðŸ”­</span>
         <span class="sidebar-logo-text">GitGuide Analytics</span>
     </div>
     """, unsafe_allow_html=True)
@@ -362,32 +376,32 @@ def render_sidebar():
 
     page = st.sidebar.radio(
         "Navigation",
-        ["🏠 Overview", "📊 Analytics", "🔍 Explorer", "💡 Insights"],
+        ["ðŸ  Overview", "ðŸ“Š Analytics", "ðŸ” Explorer", "ðŸ’¡ Insights"],
         label_visibility="collapsed"
     )
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-    st.sidebar.markdown("**🔗 Live GitHub Ingestion**")
+    st.sidebar.markdown("**ðŸ”— Live GitHub Ingestion**")
 
     github_url   = st.sidebar.text_input(
         "Repository URL or owner/repo",
         placeholder="https://github.com/facebook/react",
         label_visibility="collapsed"
     )
-    fetch_clicked = st.sidebar.button("🚀 Fetch Live Data", use_container_width=True)
+    fetch_clicked = st.sidebar.button("ðŸš€ Fetch Live Data", width='stretch')
 
     fetched_csv = os.path.join(BASE_DIR, "data", "raw", "fetched_github_repo_data.csv")
     df = None
 
     if fetch_clicked and github_url.strip():
-        with st.spinner(f"Fetching `{github_url.strip()}`…"):
+        with st.spinner(f"Fetching `{github_url.strip()}`â€¦"):
             try:
                 from github_repo_ingestion import generate_csv_from_github_api
                 df_fetched, report = generate_csv_from_github_api(github_url.strip(), output_dir=BASE_DIR)
                 st.sidebar.success(
-                    f"✓ **{report['repository']}**\n\n"
-                    f"{report['total_contributors']} contributors · "
-                    f"{report['total_commits_fetched']} commits · "
+                    f"âœ“ **{report['repository']}**\n\n"
+                    f"{report['total_contributors']} contributors Â· "
+                    f"{report['total_commits_fetched']} commits Â· "
                     f"{report['total_prs_fetched']} PRs"
                 )
                 df = df_fetched
@@ -400,7 +414,7 @@ def render_sidebar():
                 df = pd.read_csv(fetched_csv)
                 repo_name = df["repository_name"].iloc[0] if "repository_name" in df.columns and len(df) else "GitHub repo"
                 st.sidebar.markdown(
-                    f"<span style='color:#64748b;font-size:0.78rem'>📂 Cached: <b style='color:#818cf8'>{repo_name}</b> · {len(df)} contributors</span>",
+                    f"<span style='color:#64748b;font-size:0.78rem'>ðŸ“‚ Cached: <b style='color:#818cf8'>{repo_name}</b> Â· {len(df)} contributors</span>",
                     unsafe_allow_html=True
                 )
             except Exception:
@@ -408,33 +422,33 @@ def render_sidebar():
 
     if df is None:
         st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-        st.sidebar.markdown("**📁 Manual Upload**")
+        st.sidebar.markdown("**ðŸ“ Manual Upload**")
         uploaded = st.sidebar.file_uploader("Upload CSV Dataset", type=["csv"], label_visibility="collapsed")
         if uploaded:
             try:
                 df = pd.read_csv(uploaded)
-                st.sidebar.success(f"✓ {uploaded.name}")
+                st.sidebar.success(f"âœ“ {uploaded.name}")
             except Exception as e:
                 st.sidebar.error(str(e))
         if df is None:
             df = load_default_dataset()
-            st.sidebar.markdown("<span style='color:#475569;font-size:0.75rem'>ℹ︎ Using default project dataset</span>", unsafe_allow_html=True)
+            st.sidebar.markdown("<span style='color:#475569;font-size:0.75rem'>â„¹ï¸Ž Using default project dataset</span>", unsafe_allow_html=True)
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
     st.sidebar.markdown(f"""
     <div style='color:#475569;font-size:0.72rem;line-height:1.8'>
         <b style='color:#64748b'>Dataset</b><br>
-        {len(df):,} rows · {len(df.columns)} cols
+        {len(df):,} rows Â· {len(df.columns)} cols
     </div>
     """, unsafe_allow_html=True)
 
     return page, df
 
 
-# ── Page 1: Overview ──────────────────────────────────────────────────────────
+# â”€â”€ Page 1: Overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def render_overview(df):
     st.markdown('<div class="page-header">GitGuide Analytics Platform</div>', unsafe_allow_html=True)
-    st.markdown('<div class="page-subheader">Open-source contributor intelligence — discover who builds, who reviews, and who stops coming back.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subheader">Open-source contributor intelligence â€” discover who builds, who reviews, and who stops coming back.</div>', unsafe_allow_html=True)
 
     # KPI row
     commit_col = next((c for c in ["commits_count", "commits", "total_contributions"] if c in df.columns), df.select_dtypes(include=np.number).columns[0] if len(df.select_dtypes(include=np.number).columns) else None)
@@ -442,39 +456,39 @@ def render_overview(df):
     pr_col          = next((c for c in ["pull_requests_opened", "prs"] if c in df.columns), None)
     review_col      = next((c for c in ["pr_review_days", "review_days"] if c in df.columns), None)
 
-    total_commits   = int(df[commit_col].sum()) if commit_col else "—"
+    total_commits   = int(df[commit_col].sum()) if commit_col else "â€”"
     unique_contribs = df[contributor_col].nunique()
-    avg_review      = f"{df[review_col].mean():.1f}d" if review_col else "—"
-    single_ratio    = f"{(df[commit_col] == 1).mean() * 100:.1f}%" if commit_col else "—"
+    avg_review      = f"{df[review_col].mean():.1f}d" if review_col else "â€”"
+    single_ratio    = f"{(df[commit_col] == 1).mean() * 100:.1f}%" if commit_col else "â€”"
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(glass_metric("👥", "Contributors", f"{unique_contribs:,}", "Active in dataset", "neutral"), unsafe_allow_html=True)
+        st.markdown(glass_metric("ðŸ‘¥", "Contributors", f"{unique_contribs:,}", "Active in dataset", "neutral"), unsafe_allow_html=True)
     with c2:
-        st.markdown(glass_metric("💾", "Total Commits", f"{total_commits:,}" if isinstance(total_commits, int) else total_commits, "+12% this cycle", "positive"), unsafe_allow_html=True)
+        st.markdown(glass_metric("ðŸ’¾", "Total Commits", f"{total_commits:,}" if isinstance(total_commits, int) else total_commits, "+12% this cycle", "positive"), unsafe_allow_html=True)
     with c3:
-        st.markdown(glass_metric("⏱️", "Avg PR Review", avg_review, "Target < 3 days", "neutral"), unsafe_allow_html=True)
+        st.markdown(glass_metric("â±ï¸", "Avg PR Review", avg_review, "Target < 3 days", "neutral"), unsafe_allow_html=True)
     with c4:
-        st.markdown(glass_metric("⚠️", "Single-Commit %", single_ratio, "Onboarding risk signal", "negative"), unsafe_allow_html=True)
+        st.markdown(glass_metric("âš ï¸", "Single-Commit %", single_ratio, "Onboarding risk signal", "negative"), unsafe_allow_html=True)
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
 
     col_l, col_r = st.columns([3, 2])
     with col_l:
-        st.markdown(section_title("📋 Dataset Preview", "First 10 rows of the active dataset"), unsafe_allow_html=True)
-        st.dataframe(df.head(10), use_container_width=True, height=320)
+        st.markdown(section_title("ðŸ“‹ Dataset Preview", "First 10 rows of the active dataset"), unsafe_allow_html=True)
+        st.dataframe(df.head(10), width='stretch', height=320)
     with col_r:
-        st.markdown(section_title("📐 Schema Overview", "Column types and completeness"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ“ Schema Overview", "Column types and completeness"), unsafe_allow_html=True)
         schema = pd.DataFrame({
             "Type":       df.dtypes.astype(str),
             "Non-Null":   df.notnull().sum(),
             "Nulls":      df.isnull().sum(),
             "Fill %":     (df.notnull().sum() / len(df) * 100).round(1).astype(str) + "%",
         })
-        st.dataframe(schema, use_container_width=True, height=320)
+        st.dataframe(schema, width='stretch', height=320)
 
 
-# ── Page 2: Analytics ─────────────────────────────────────────────────────────
+# â”€â”€ Page 2: Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def render_analytics(df):
     st.markdown('<div class="page-header">Interactive Git Analytics</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subheader">Commit trends, contributor throughput, PR cycle times, and role distribution.</div>', unsafe_allow_html=True)
@@ -487,10 +501,10 @@ def render_analytics(df):
     time_col        = next((c for c in ["timestamp","date","created_at"] if c in df.columns), None)
     lines_col       = next((c for c in ["lines_changed","lines"] if c in df.columns), None)
 
-    # ── Row 1: Area chart + Grouped bar
+    # â”€â”€ Row 1: Area chart + Grouped bar
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(section_title("📈 Commit Activity Over Time", "Daily commit aggregation"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ“ˆ Commit Activity Over Time", "Daily commit aggregation"), unsafe_allow_html=True)
         if time_col and commit_col:
             df_t = df.copy()
             df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
@@ -506,12 +520,12 @@ def render_analytics(df):
                 hovertemplate="<b>%{x}</b><br>Commits: %{y}<extra></extra>"
             ))
             fig.update_layout(**PLOTLY_LAYOUT, title="Total Commits Over Time")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("No timestamp column found for time-series view.")
 
     with col2:
-        st.markdown(section_title("📊 Commits vs. PRs per Contributor", "Top 15 contributors"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ“Š Commits vs. PRs per Contributor", "Top 15 contributors"), unsafe_allow_html=True)
         if commit_col:
             y_cols = [commit_col] + ([pr_col] if pr_col else [])
             top15 = df.nlargest(15, commit_col) if commit_col else df.head(15)
@@ -528,14 +542,14 @@ def render_analytics(df):
             layout = dict(PLOTLY_LAYOUT)
             layout["xaxis"] = dict(PLOTLY_LAYOUT["xaxis"], tickangle=-30)
             fig.update_layout(**layout, barmode="group", title=dict(text="Contributor Activity Breakdown"))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
 
-    # ── Row 2: Scatter + Donut
+    # â”€â”€ Row 2: Scatter + Donut
     col3, col4 = st.columns(2)
     with col3:
-        st.markdown(section_title("🔵 PR Review Duration vs. Commit Count", "Bubble size = PRs opened"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ”µ PR Review Duration vs. Commit Count", "Bubble size = PRs opened"), unsafe_allow_html=True)
         if review_col and commit_col:
             fig = px.scatter(
                 df, x=commit_col, y=review_col,
@@ -546,12 +560,12 @@ def render_analytics(df):
             )
             fig.update_traces(marker=dict(opacity=0.82, line=dict(width=1, color="rgba(255,255,255,0.1)")))
             fig.update_layout(**PLOTLY_LAYOUT, title="PR Review Duration vs. Commit Count")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("No PR review duration column detected.")
 
     with col4:
-        st.markdown(section_title("🍩 Contributor Role Distribution", "Share of maintainers, reviewers, contributors"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ© Contributor Role Distribution", "Share of maintainers, reviewers, contributors"), unsafe_allow_html=True)
         if role_col:
             role_counts = df[role_col].value_counts().reset_index()
             role_counts.columns = ["role", "count"]
@@ -567,16 +581,16 @@ def render_analytics(df):
             ))
             fig.update_layout(**PLOTLY_LAYOUT, title="Role & Branch Share",
                               showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("No role or branch column detected.")
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
 
-    # ── Row 3: Lines changed histogram + PR review distribution
+    # â”€â”€ Row 3: Lines changed histogram + PR review distribution
     col5, col6 = st.columns(2)
     with col5:
-        st.markdown(section_title("📦 Code Volume Distribution", "Lines changed per contributor"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ“¦ Code Volume Distribution", "Lines changed per contributor"), unsafe_allow_html=True)
         target_col = lines_col or commit_col
         if target_col:
             fig = px.histogram(
@@ -585,10 +599,10 @@ def render_analytics(df):
             )
             fig.update_traces(marker_line_color="rgba(0,0,0,0)", opacity=0.85)
             fig.update_layout(**PLOTLY_LAYOUT, title=f"{target_col.replace('_', ' ').title()} Frequency")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     with col6:
-        st.markdown(section_title("⏳ PR Review Cycle Time", "Distribution of review durations in days"), unsafe_allow_html=True)
+        st.markdown(section_title("â³ PR Review Cycle Time", "Distribution of review durations in days"), unsafe_allow_html=True)
         if review_col:
             fig = px.box(
                 df, y=review_col, color=role_col,
@@ -597,12 +611,12 @@ def render_analytics(df):
             )
             fig.update_traces(marker=dict(opacity=0.65, size=5))
             fig.update_layout(**PLOTLY_LAYOUT, title="PR Review Days by Role")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("No PR review duration column found.")
 
 
-# ── Page 3: Explorer ──────────────────────────────────────────────────────────
+# â”€â”€ Page 3: Explorer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def render_explorer(df):
     st.markdown('<div class="page-header">Interactive Data Explorer</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subheader">Filter by role, search any value, and export custom CSV slices.</div>', unsafe_allow_html=True)
@@ -615,7 +629,7 @@ def render_explorer(df):
         else:
             selected_role = "ALL"
     with c2:
-        search_q = st.text_input("Search (any column)", placeholder="Type to search…").strip().lower()
+        search_q = st.text_input("Search (any column)", placeholder="Type to searchâ€¦").strip().lower()
     with c3:
         if "commits_count" in df.columns or "commits" in df.columns:
             commit_col = "commits_count" if "commits_count" in df.columns else "commits"
@@ -638,31 +652,31 @@ def render_explorer(df):
     # Summary row
     cs1, cs2, cs3, cs4 = st.columns(4)
     with cs1:
-        st.markdown(glass_metric("📋", "Filtered Records", f"{len(filtered):,}", f"of {len(df):,} total", "neutral"), unsafe_allow_html=True)
+        st.markdown(glass_metric("ðŸ“‹", "Filtered Records", f"{len(filtered):,}", f"of {len(df):,} total", "neutral"), unsafe_allow_html=True)
     with cs2:
         if "commits_count" in filtered.columns and len(filtered):
-            st.markdown(glass_metric("💾", "Filtered Commits", f"{int(filtered['commits_count'].sum()):,}", "", "positive"), unsafe_allow_html=True)
+            st.markdown(glass_metric("ðŸ’¾", "Filtered Commits", f"{int(filtered['commits_count'].sum()):,}", "", "positive"), unsafe_allow_html=True)
     with cs3:
         if "pr_review_days" in filtered.columns and len(filtered):
-            st.markdown(glass_metric("⏱️", "Avg PR Review", f"{filtered['pr_review_days'].mean():.1f}d", "", "neutral"), unsafe_allow_html=True)
+            st.markdown(glass_metric("â±ï¸", "Avg PR Review", f"{filtered['pr_review_days'].mean():.1f}d", "", "neutral"), unsafe_allow_html=True)
     with cs4:
         if "contributor_role" in filtered.columns and len(filtered):
             top_role = filtered["contributor_role"].mode()[0]
-            st.markdown(glass_metric("🏷️", "Dominant Role", top_role, "", "neutral"), unsafe_allow_html=True)
+            st.markdown(glass_metric("ðŸ·ï¸", "Dominant Role", top_role, "", "neutral"), unsafe_allow_html=True)
 
     st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-    st.dataframe(filtered, use_container_width=True, height=400)
+    st.dataframe(filtered, width='stretch', height=400)
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
     st.download_button(
-        label="📥 Export Filtered Dataset as CSV",
+        label="ðŸ“¥ Export Filtered Dataset as CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
         file_name="gitguide_filtered_export.csv",
         mime="text/csv",
-        use_container_width=True
+        width='stretch'
     )
 
 
-# ── Page 4: Insights ──────────────────────────────────────────────────────────
+# â”€â”€ Page 4: Insights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def render_insights(df):
     st.markdown('<div class="page-header">Business Intelligence Report</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subheader">Automated insights on PR velocity, contributor onboarding friction, and data health.</div>', unsafe_allow_html=True)
@@ -681,19 +695,19 @@ def render_insights(df):
     ci1, ci2, ci3, ci4 = st.columns(4)
     with ci1:
         dt = "positive" if avg_review < 3 else ("negative" if avg_review > 5 else "neutral")
-        st.markdown(glass_metric("⏱️", "Avg PR Review Time", f"{avg_review:.1f} days",
+        st.markdown(glass_metric("â±ï¸", "Avg PR Review Time", f"{avg_review:.1f} days",
                                   "Target < 3 days", dt), unsafe_allow_html=True)
     with ci2:
         dt = "negative" if pct_slow > 20 else "neutral"
-        st.markdown(glass_metric("🐌", "PRs > 5 Days", f"{pct_slow:.1f}%",
+        st.markdown(glass_metric("ðŸŒ", "PRs > 5 Days", f"{pct_slow:.1f}%",
                                   "Reviewer bottleneck", dt), unsafe_allow_html=True)
     with ci3:
         dt = "negative" if pct_single > 25 else "neutral"
-        st.markdown(glass_metric("👤", "Single-Commit %", f"{pct_single:.1f}%",
+        st.markdown(glass_metric("ðŸ‘¤", "Single-Commit %", f"{pct_single:.1f}%",
                                   "Onboarding friction risk", dt), unsafe_allow_html=True)
     with ci4:
         dt = "positive" if health_score >= 95 else ("negative" if health_score < 80 else "neutral")
-        st.markdown(glass_metric("🩺", "Data Health Score", f"{health_score}%",
+        st.markdown(glass_metric("ðŸ©º", "Data Health Score", f"{health_score}%",
                                   "Null field ratio analysis", dt), unsafe_allow_html=True)
 
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
@@ -702,7 +716,7 @@ def render_insights(df):
     left, right = st.columns([1, 1.6])
 
     with left:
-        st.markdown(section_title("🔍 Key Findings", "Automated operational insights"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ” Key Findings", "Automated operational insights"), unsafe_allow_html=True)
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
         st.markdown(f"""
@@ -710,7 +724,7 @@ def render_insights(df):
             <div class="insight-label" style="color:#60a5fa">PR Review Velocity</div>
             <div class="insight-text">
                 Average PR review turnaround is <b style="color:#e2e8f0">{avg_review:.1f} days</b>.
-                <b style="color:#ef4444">{pct_slow:.0f}%</b> of PRs exceed 5 days —
+                <b style="color:#ef4444">{pct_slow:.0f}%</b> of PRs exceed 5 days â€”
                 indicating potential reviewer bandwidth constraints or unclear merge criteria.
             </div>
         </div>
@@ -740,7 +754,7 @@ def render_insights(df):
         """, unsafe_allow_html=True)
 
     with right:
-        st.markdown(section_title("📊 Commit Distribution by Role", "Who contributes the most code volume"), unsafe_allow_html=True)
+        st.markdown(section_title("ðŸ“Š Commit Distribution by Role", "Who contributes the most code volume"), unsafe_allow_html=True)
         if commit_col and role_col:
             df_role = df.groupby(role_col)[commit_col].agg(["sum", "mean", "count"]).reset_index()
             df_role.columns = ["Role", "Total Commits", "Avg Commits", "Contributors"]
@@ -753,10 +767,10 @@ def render_insights(df):
             ))
             fig.update_layout(**PLOTLY_LAYOUT, title="Total Commits by Contributor Role",
                               showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         if review_col and role_col:
-            st.markdown(section_title("⏳ PR Review Days by Role", "Median review times across contributor tiers"), unsafe_allow_html=True)
+            st.markdown(section_title("â³ PR Review Days by Role", "Median review times across contributor tiers"), unsafe_allow_html=True)
             fig2 = px.violin(
                 df, y=review_col, x=role_col,
                 color=role_col,
@@ -765,22 +779,23 @@ def render_insights(df):
             )
             fig2.update_layout(**PLOTLY_LAYOUT, showlegend=False,
                                title="PR Review Duration Distribution by Role")
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width='stretch')
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def main():
     page, df = render_sidebar()
 
-    if page == "🏠 Overview":
+    if page == "ðŸ  Overview":
         render_overview(df)
-    elif page == "📊 Analytics":
+    elif page == "ðŸ“Š Analytics":
         render_analytics(df)
-    elif page == "🔍 Explorer":
+    elif page == "ðŸ” Explorer":
         render_explorer(df)
-    elif page == "💡 Insights":
+    elif page == "ðŸ’¡ Insights":
         render_insights(df)
 
 
 if __name__ == "__main__":
     main()
+
