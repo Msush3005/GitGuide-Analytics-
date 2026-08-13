@@ -187,9 +187,31 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 24. SQL-Based Insight Validation Workflow (`validation_script.py`)
+
+This module demonstrates cross-layer metric validation between SQL views and Python calculations, building automated audit pipelines to catch computation drift before corrupting dashboards.
+
+### Why Cross-Layer Metric Validation Matters
+- **Prevents Metric Corruption**: Ensures metrics calculated in Python notebooks and SQL views match identically (0.00% difference), preventing silent calculation drift.
+- **Root Cause Remediation**: Audits date function bugs (e.g. `MONTH()` stripping year context across year boundaries) and verifies post-fix metric integrity.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python validation_script.py
+```
+
+### Function Breakdown & Responsibilities
+- **`ensure_validation_database(database_path)`**: Populates `analytics.db` with `logins` and `orders` tables.
+- **`validate_metrics(engine, tolerance_pct, use_fixed_sql)`**: Computes Active Users (30d), Average Order Value (AOV), and Monthly Customer Churn in both SQL and Python, comparing percentage differences against tolerance limits.
+- **`compute_python_churn(engine)`**: Computes Month N-1 vs Month N spending churn in Pandas.
+- **Outputs**: Generates [`validation_report.csv`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/validation_report.csv) and [`discrepancy_analysis.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/discrepancy_analysis.md) detailing root cause investigations and follow-up Q&A.
+
 
 
 
