@@ -187,9 +187,38 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 21. Dashboard Architecture & Human-Centered Design Workflow (`dashboard_app.py`)
+
+This module demonstrates building interactive executive dashboards based on human visual attention, structuring insights into a 4-level information hierarchy (Status, Trends, Segments, Detail) using Streamlit and Matplotlib.
+
+### Why Dashboard Architecture Matters
+- **Avoids Cognitive Overload**: Replaces cluttered 50-chart dashboards with a structured top-down information hierarchy.
+- **Progressive Disclosure**: Presents top-level KPI status immediately while enabling interactive filter drill-downs and CSV data exports for power users.
+
+### How to Run the Dashboard Application
+Run the Streamlit app from the project root:
+
+```bash
+streamlit run dashboard_app.py
+```
+
+To generate static chart assets in `output/`:
+
+```bash
+python scripts/generate_dashboard_assets.py
+```
+
+### Dashboard Structure Breakdown
+- **Level 1 (Status)**: Top row with 5 KPI summary cards (`Revenue`, `Active Customers`, `Avg Order Value`, `Churn Rate`, `NPS Score`).
+- **Level 2 (Trends)**: 3 time-series trend charts (Revenue vs Target, Active vs Churned Customers, AOV Trend).
+- **Level 3 (Segments)**: Horizontal bar chart showing revenue contribution per customer tier (`Enterprise`, `Mid-Market`, `SMB`, `Starter`).
+- **Level 4 (Detail & Progressive Disclosure)**: Interactive sidebar filters (`Customer Segment`, `Date Range`), dynamic data table explorer, and CSV export.
+- **Documentation**: [`dashboard_design.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/dashboard_design.md) detailing information hierarchy, design principles, color palette tokens, target audience personas, and database view data sources.
+
 
 
 
