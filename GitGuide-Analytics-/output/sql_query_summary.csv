@@ -1,0 +1,4 @@
+customer_type,customer_count,avg_ltv,churn_rate_pct
+Startup,387,17067.25,6.98
+Enterprise,166,16348.17,4.82
+SMB,447,16125.02,9.4

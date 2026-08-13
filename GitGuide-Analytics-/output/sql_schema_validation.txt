@@ -1,0 +1,7 @@
+  - customer_id          : BIGINT          (NULLABLE)
+  - customer_name        : TEXT            (NULLABLE)
+  - customer_type        : TEXT            (NULLABLE)
+  - email                : TEXT            (NULLABLE)
+  - signup_date          : TEXT            (NULLABLE)
+  - lifetime_value       : FLOAT           (NULLABLE)
+  - churn                : BIGINT          (NULLABLE)

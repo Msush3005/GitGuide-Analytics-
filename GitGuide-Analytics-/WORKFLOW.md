@@ -166,5 +166,31 @@ python scripts/anomaly_detection.py
 - **`task4_anomaly_logging_audit_trail(...)`**: Persists audit log records into `anomalies_log.csv` and `output/anomalies_log.csv`.
 - **`task5_visualization_with_flagged_points(...)`**: Renders raw revenue line, 7-day rolling average, shaded $\pm 2\sigma$ range, and red 'X' anomaly markers, saving to `anomaly_detection.png` and `output/anomaly_detection.png`.
 
+---
+
+## 17. SQL Environment & Database Integration Workflow (`scripts/database_integration.py`)
+
+This module executes Python-to-SQL database integration, configuring SQLAlchemy engines, writing DataFrames to database tables, inspecting schemas, running analytical queries, and packaging reusable loading functions.
+
+### Why Database Integration Matters
+- **Single Source of Truth**: Replaces scattered local CSV files and notebooks with a centralized, queryable database table.
+- **Repeatable & Auditable Pipelines**: Encapsulates data persistence and schema validation inside reusable module functions.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/database_integration.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
+- **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
+- **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
+- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
+- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
+- **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+
 
 
