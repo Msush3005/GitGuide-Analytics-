@@ -1,0 +1,4 @@
+customer_segment,avg_transaction_value,transaction_count,total_revenue
+SMB,218.4627352071006,6760,1476808.09
+Enterprise,217.8423097991479,3286,715829.83
+Startup,212.425054501413,4954,1052353.72
