@@ -215,6 +215,31 @@ streamlit run streamlit_app.py
 - **`streamlit_app.py`**: Web app embedding Plotly figures via `st.plotly_chart(fig, use_container_width=True)` with sidebar controls.
 - **Documentation**: [`interactive_charts/plotly_guide.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/interactive_charts/plotly_guide.md) detailing follow-up Q&A on date range sliders (`rangeslider`) vs range selector buttons (`rangeselector`).
 
+---
+
+## 27. KPI Card & Summary Metric Design Workflow (`kpi_dashboard.py` & `scripts/kpi_engine.py`)
+
+This module demonstrates designing a top-row executive dashboard header with five KPI cards (Total Revenue, Active Users, AOV, Churn Rate, Customer Satisfaction) displaying current value, period-over-period percentage change, trend direction, and directional status coloring (`delta_color='inverse'` for Churn).
+
+### Why KPI Card Header Layouts Matter
+- **Instant Status Check**: Answers "are we on track?" in under 5 seconds for executives without requiring scrolling, filtering, or manual calculations.
+- **Directional Status Logic**: Prevents misleading green indicators on bad trends by inverting color rules for metrics where lower is better (e.g., Churn Rate decrease is Green).
+
+### How to Execute the Script & Dashboard
+Run the KPI engine script and Streamlit dashboard from the project root:
+
+```bash
+python scripts/kpi_engine.py
+streamlit run kpi_dashboard.py
+```
+
+### Function Breakdown & Responsibilities
+- **`compute_five_kpis(database_path)`**: Computes 5 Month-over-Month KPIs dynamically from clean database tables.
+- **`get_trend_indicator(change_pct, metric_name)`**: Applies trend direction and directional status colors (`#10b981` Green, `#ef4444` Red, `#f59e0b` Yellow), handling inverted metrics.
+- **`kpi_dashboard.py`**: Streamlit executive web application rendering 5 top-row KPI cards with `st.metric(..., delta_color='inverse')`, followed by Level 2 trend charts and Level 3 detail tables.
+- **Data Lineage**: Documented in [`kpi_sources.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/kpi_sources.md).
+
+
 
 
 

@@ -1,0 +1,6 @@
+Metric,Current,Prior,Change_Pct,Display_Val,Trend_Arrow,Status_Color,Status,Change_Display
+Revenue,5200000.0,4622222.22,12.500000054086543,$5.2M,UP,#10b981,Green (Good),+12.5%
+Active Users,2500.0,2376.0,5.218855218855219,"2,500",UP,#10b981,Green (Good),+5.2%
+AOV,45.0,44.07,2.1102791014295432,$45,UP,#10b981,Green (Good),+2.1%
+Churn Rate,5.2,5.35,-2.8037383177569994,5.2%,DOWN,#10b981,Green (Good),-2.8%
+Satisfaction,4.2,4.19,0.23866348448686842,4.2/5,FLAT,#f59e0b,Yellow (Neutral),+0.2%
