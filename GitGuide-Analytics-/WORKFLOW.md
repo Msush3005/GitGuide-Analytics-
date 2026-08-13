@@ -141,4 +141,30 @@ python scripts/rolling_metrics.py
 - **`task4_compute_cumulative_sum(df)`**: Computes `.cumsum()` cumulative total revenue and exports plot to `output/cumulative.png`.
 - **`task5_identify_trend_and_implications(df, ...)`**: Evaluates recent 30-day rolling window direction (UP/DOWN/FLAT), calculates volatility, and exports structured business interpretation to `output/trend_analysis.txt`.
 
+---
+
+## 16. Anomaly Detection & Risk Identification Workflow (`scripts/anomaly_detection.py`)
+
+This module executes automated threshold checking and statistical z-score anomaly monitoring, categorizing severity levels, maintaining persistent audit logs, and generating time-series charts with flagged anomaly markers.
+
+### Why Anomaly Detection Matters
+- **Early Warning System**: Catches silent payment failures or fraud bot spikes within minutes before financial loss multiplies.
+- **Audit Trail & Governance**: Persists all detected anomalies into `anomalies_log.csv` with status tracking (`OPEN`, `INVESTIGATED`, `RESOLVED`).
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/anomaly_detection.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_business_metrics_dataset(num_days, filepath)`**: Generates 90 days of daily metrics with injected high/low anomalies.
+- **`task1_check_thresholds(metrics, alert_rules)`**: Checks metrics against static min/max business rule boundaries.
+- **`task2_detect_anomalies_zscore(series, threshold)`**: Computes rolling z-scores over a 30-day lookback window ($z > 2.0$).
+- **`task3_severity_classification(anomalies, ...)`**: Classifies anomalies into `CRITICAL`, `HIGH`, `MEDIUM`, and `LOW` levels.
+- **`task4_anomaly_logging_audit_trail(...)`**: Persists audit log records into `anomalies_log.csv` and `output/anomalies_log.csv`.
+- **`task5_visualization_with_flagged_points(...)`**: Renders raw revenue line, 7-day rolling average, shaded $\pm 2\sigma$ range, and red 'X' anomaly markers, saving to `anomaly_detection.png` and `output/anomaly_detection.png`.
+
+
 
