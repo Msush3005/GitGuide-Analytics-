@@ -215,6 +215,30 @@ streamlit run streamlit_app.py
 - **`streamlit_app.py`**: Web app embedding Plotly figures via `st.plotly_chart(fig, use_container_width=True)` with sidebar controls.
 - **Documentation**: [`interactive_charts/plotly_guide.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/interactive_charts/plotly_guide.md) detailing follow-up Q&A on date range sliders (`rangeslider`) vs range selector buttons (`rangeselector`).
 
+---
+
+## 28. Data Storytelling & Insight Narrative Workflow (`analysis_narrative.md` & `scripts/narrative_engine.py`)
+
+This module demonstrates structuring data analysis into an executive data story following the 5-part narrative arc (Context $\rightarrow$ Data $\rightarrow$ Finding $\rightarrow$ Why $\rightarrow$ Action), eliminating technical jargon, supporting findings with quantitative evidence, and providing actionable recommendations.
+
+### Why Data Storytelling Matters
+- **Turns Analysis Into Strategic Action**: Transforms technical statistical findings into clear executive business narratives that leadership reads, understands, and acts on immediately.
+- **Eliminates Jargon Obstacles**: Translates technical concepts (`p-values`, `AUC`, `logistic regression`) into plain-language business impact (`$400K revenue recovery`).
+
+### How to Execute the Script
+Run the narrative validation script from the project root:
+
+```bash
+python scripts/narrative_engine.py
+```
+
+### Function Breakdown & Responsibilities
+- **`validate_narrative_document(file_path)`**: Asserts document word count (500–750 words), verifies presence of all 5 narrative sections, and enforces zero technical jargon.
+- **`analysis_narrative.md`**: Standalone 672-word executive summary document.
+- **`supporting_evidence/evidence_breakdown.md`**: Quantitative breakdown supporting each finding.
+- **`feedback_and_edits.md`**: Log documenting peer clarity test feedback and document revisions.
+
+
 
 
 
