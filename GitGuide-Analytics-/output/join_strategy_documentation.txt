@@ -1,0 +1,27 @@
+===================================================================
+JOIN STRATEGY DOCUMENTATION
+===================================================================
+
+RELATIONAL DATA SCHEMA:
+- Table: customers (1,000 rows, Primary Key: customer_id)
+- Table: orders (5,000 rows, Primary Key: order_id, Foreign Key: customer_id)
+- Table: order_items (8,000 rows, Primary Key: item_id, Foreign Key: order_id, Foreign Key: product_id)
+- Table: products (500 rows, Primary Key: product_id)
+
+JOIN DECISION 1: customers LEFT JOIN orders
+- Purpose: Calculate Customer Lifetime Value and retain inactive accounts.
+- Row Count Behavior: 1,000 base customers -> 5,080 raw join rows (1-to-many relationship).
+- Unmatched Keys: 100 customers have 0 orders (retained due to LEFT JOIN semantics).
+- Business Use: Churn analysis, inactive user retention targeting, and LTV.
+
+JOIN DECISION 2: orders LEFT JOIN customers (Data Quality Audit)
+- Purpose: Audit foreign key integrity and detect orphaned transaction records.
+- Unmatched Keys: 20 orphaned orders found with invalid customer_id (9999).
+- Action Required: Route orphaned orders to data engineering queue for account remediation.
+
+JOIN DECISION 3: Full 4-Table Join (customers -> orders -> order_items -> products)
+- Purpose: Line-item product revenue attribution across customer segments.
+- Row Count Behavior: 5,000 orders -> 8,000 line-item rows (1 order can have multiple items).
+- Duplication Prevention: Group and aggregate line_total at the product/customer level.
+- Validation: Line total sum ($2,079,842.50) exactly matches raw order_items total (Delta < $0.01).
+===================================================================

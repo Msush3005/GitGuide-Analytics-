@@ -187,9 +187,33 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 20. SQL Joins & Multi-Table Analysis Workflow (`scripts/sql_joins_engine.py`)
+
+This module demonstrates relational database join semantics (`INNER`, `LEFT`, `FULL OUTER`), row count validation before/after joining, unmatched key detection, 4-table lineage joins, and join strategy documentation.
+
+### Why Relational Join Validation Matters
+- **Prevents Silent Duplication**: Verifies row multiplication factors when joining 1-to-many relationships (e.g. 1 customer with 5 orders).
+- **Audits Unmatched Keys**: Detects inactive customer accounts (0 orders) and orphaned transaction records (invalid foreign keys) for database remediation.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/sql_joins_engine.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_relational_joins_database(database_path)`**: Populates `analytics.db` with 4 relational tables (`customers`, `orders`, `order_items`, `products`).
+- **`task1_left_join_validation(engine)`**: Executes LEFT JOIN, comparing base counts to join outputs and calculating 1-to-many multiplication ratios.
+- **`task2_detect_unmatched_keys(engine)`**: Detects customers without orders (104 customers) and orphaned orders (20 orders) via `WHERE right.key IS NULL`.
+- **`task3_compare_join_types(engine)`**: Compares `INNER JOIN`, `LEFT JOIN`, and `FULL OUTER JOIN` row counts.
+- **`task4_multi_table_join(engine)`**: Executes 4-table join and asserts line item revenue sum matches raw item total (`Delta < $0.01`).
+- **`task5_document_join_decisions()`**: Exports formal `join_strategy_documentation.txt` and `output/join_strategy_documentation.txt`.
+
 
 
 
