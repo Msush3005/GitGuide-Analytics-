@@ -187,9 +187,34 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 26. Interactive Plotly Chart Design Workflow (`streamlit_app.py` & `scripts/interactive_charts_engine.py`)
+
+This module demonstrates building interactive Plotly charts featuring custom hover tooltips, dropdown metric selectors (`updatemenus`), zoom/pan controls, and date range sliders, integrated into a Streamlit web application.
+
+### Why Interactive Charts Matter
+- **Empowers Self-Service Exploration**: Lets stakeholders explore follow-up questions independently (zooming into date ranges, hovering for multi-field details, toggling between Revenue/Profit/Orders).
+- **Scales Dashboard Communication**: Replaces static re-rendering cycles with instant client-side interactivity and web dashboard integration.
+
+### How to Execute the Script & Streamlit Dashboard
+Run the generation script and Streamlit app from the project root:
+
+```bash
+python scripts/interactive_charts_engine.py
+streamlit run streamlit_app.py
+```
+
+### Function Breakdown & Responsibilities
+- **`ensure_plotly_database(database_path)`**: Populates `analytics.db` with `daily_sales` and `product_metrics` tables.
+- **`task1_create_hover_charts(df_daily, df_products)`**: Generates `interactive_charts/chart1_revenue_trend.html` and `interactive_charts/chart2_product_performance.html`.
+- **`task2_create_dropdown_chart(df_products)`**: Generates `interactive_charts/chart3_metric_selector.html` (`updatemenus` dropdown).
+- **`task3_create_interactive_zoom_chart(df_daily)`**: Generates `interactive_charts/chart4_interactive.html` (zoom, pan, reset, box select, and range slider).
+- **`streamlit_app.py`**: Web app embedding Plotly figures via `st.plotly_chart(fig, use_container_width=True)` with sidebar controls.
+- **Documentation**: [`interactive_charts/plotly_guide.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/interactive_charts/plotly_guide.md) detailing follow-up Q&A on date range sliders (`rangeslider`) vs range selector buttons (`rangeselector`).
+
 
 
 
