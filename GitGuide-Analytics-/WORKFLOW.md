@@ -187,9 +187,32 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 22. Analytical SQL Query Optimization Workflow (`scripts/query_optimization.py`)
+
+This module demonstrates refactoring unoptimized analytical SQL queries using explicit column selection, early join filtering via CTEs, and modular CTE sequences.
+
+### Why Analytical Query Optimization Matters
+- **Accelerates Dashboard Response**: Replaces heavy `SELECT *` scans and post-join filtering with early dataset shrinkage, reducing execution times from tens of seconds to milliseconds.
+- **Reduces Database Memory Overhead**: Shrinks intermediate join matrices by up to 10x, preserving database memory under high concurrent user load.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/query_optimization.py
+```
+
+### Function Breakdown & Responsibilities
+- **`ensure_optimization_database(database_path)`**: Populates `analytics.db` with 15,000 transaction records and relational customer/product tables.
+- **`task1_explicit_columns(engine)`**: Executes `SELECT *` vs explicit column selection, measuring column count reduction %.
+- **`task2_early_filtering(engine)`**: Executes post-join filtering vs pre-join CTE filtering, measuring dataset shrinkage factors.
+- **`task3_cte_refactoring(engine)`**: Executes 3-level nested subqueries vs refactored CTE sequence, asserting identical output DataFrames.
+- **`task4_and_5_document_report()`**: Exports formal comparison tables and follow-up Q&A to [`docs/query_optimization_report.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/docs/query_optimization_report.md) and `output/query_optimization_report.md`.
+
 
 
 
