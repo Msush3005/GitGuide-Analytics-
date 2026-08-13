@@ -1,0 +1,11 @@
+customer_id,customer_name,segment,order_count_30d,revenue_30d,last_order_date,days_since_order
+1001,Customer_1001,Mid-Market,1,146.8,2026-07-23 14:13:31,21.0
+1002,Customer_1002,Starter,0,0.0,,
+1003,Customer_1003,SMB,3,357.05,2026-08-04 21:20:25,8.0
+1004,Customer_1004,SMB,1,337.38,2026-07-21 10:48:25,23.0
+1005,Customer_1005,Mid-Market,1,306.69,2026-07-16 18:01:57,28.0
+1006,Customer_1006,Mid-Market,1,37.68,2026-08-01 05:11:41,12.0
+1007,Customer_1007,Enterprise,2,625.72,2026-08-03 07:44:56,10.0
+1008,Customer_1008,Starter,2,162.55,2026-08-11 10:11:16,2.0
+1009,Customer_1009,SMB,0,0.0,,
+1010,Customer_1010,SMB,2,303.46,2026-07-23 01:15:46,21.0

@@ -1,0 +1,11 @@
+product_id,product_name,category,total_orders,total_units_sold,total_product_revenue,avg_unit_price,unique_buyers
+201,Product_201,Security,15,27,6386.05,257.33,15
+202,Product_202,Analytics,11,34,8619.96,250.86,11
+203,Product_203,Software,19,44,10394.63,253.01,19
+204,Product_204,Software,16,34,9316.77,290.02,15
+205,Product_205,Software,13,44,7343.58,156.27,13
+206,Product_206,Security,13,31,5638.7,208.62,13
+207,Product_207,Security,13,35,9159.75,222.07,13
+208,Product_208,Analytics,10,22,5387.14,261.84,10
+209,Product_209,Analytics,12,21,4333.31,199.09,12
+210,Product_210,Analytics,17,40,8502.11,200.53,17

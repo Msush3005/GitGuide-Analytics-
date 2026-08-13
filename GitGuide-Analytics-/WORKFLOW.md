@@ -187,9 +187,34 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 23. SQL Views & Aggregation Layer Design Workflow (`scripts/data_layer_engine.py`)
+
+This module demonstrates designing a clean data architecture layer using SQL views (`vw_`) as a single source of truth and pre-aggregated summary tables (`agg_`) with `updated_at` timestamps for high-speed dashboard reporting.
+
+### Why Data Layer Architecture Matters
+- **Eliminates Metric Drift**: Prevents divergent metric calculations across different dashboards by defining metric business logic in central views (`vw_active_customers`, `vw_product_performance`).
+- **Instant Dashboard Performance**: Pre-computes expensive aggregations into summary tables (`agg_daily_metrics`), cutting query execution times down to under 1 millisecond.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/data_layer_engine.py
+# or
+python assignment-33-python.py
+```
+
+### Function Breakdown & Responsibilities
+- **`ensure_relational_tables(database_path)`**: Populates `analytics.db` with relational base tables (`customers`, `orders`, `order_items`, `products`).
+- **`task1_create_views(engine)`**: Executes `CREATE VIEW` for `vw_active_customers` and `vw_product_performance`.
+- **`task2_create_preaggregated_table(engine)`**: Creates and populates `agg_daily_metrics` table with `updated_at` timestamps and measures millisecond query speed.
+- **`task3_query_clean_data_layer(engine)`**: Runs Python dashboard simulation queries querying the clean view/aggregation layer.
+- **Documentation**: [`data_layer_conventions.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/data_layer_conventions.md) and version-controlled `.sql` files under `database/views/` and `database/aggregations/`.
+
 
 
 
