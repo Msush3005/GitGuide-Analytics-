@@ -187,9 +187,34 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
-- **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
-- **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
+
+---
+
+## 25. Business Visualisation Principles Workflow (`assignment-35-visualizations.py`)
+
+This module demonstrates designing 5 distinct business visualizations adhering to chart selection rules, complete labeling, consistent company palettes, and insight annotations.
+
+### Why Visualization Principles Matter
+- **Instant Human Understanding**: Matches chart types directly to data relationships (Bar for comparison, Line for trends, Histogram for distributions, Stacked Bar for composition, Scatter for correlation).
+- **Eliminates Misinterpretation**: Labels every axis with explicit units, formats numbers into human-readable strings (`$5.2M`, `$500K`), uses colorblind-safe palettes, and highlights business insights using annotations (`ax.annotate()`, `ax.axhline()`).
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python assignment-35-visualizations.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_synthetic_visualization_data()`**: Prepares clean DataFrames for all 5 chart scenarios.
+- **`create_chart1_bar(df_product)`**: Generates `output/chart1_revenue_by_product.png` (Horizontal Bar Chart).
+- **`create_chart2_line(df_trend)`**: Generates `output/chart2_revenue_trend.png` (12-Month Line Chart with target line & dip annotation).
+- **`create_chart3_histogram(order_values)`**: Generates `output/chart3_order_value_distribution.png` (Histogram highlighting bimodal distribution).
+- **`create_chart4_stacked_bar(df_composition)`**: Generates `output/chart4_revenue_composition.png` (Stacked Bar Chart).
+- **`create_chart5_scatter(df_scatter)`**: Generates `output/chart5_marketing_vs_revenue.png` (Scatter Plot with trend line & outlier annotation).
+- **`create_charts_readme()`**: Exports [`output/CHARTS_README.md`](file:///c:/Users/Sushmitha%20Malleboina/Desktop/githubb/GitGuide-Analytics-/GitGuide-Analytics-/output/CHARTS_README.md) detailing chart types, insights, and design choices.
+
 
 
 
