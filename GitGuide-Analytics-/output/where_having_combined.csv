@@ -1,0 +1,4 @@
+customer_type,segment_customers,segment_revenue,avg_order_value
+SMB,204,416173.21,313.38
+Startup,206,387682.18,302.64
+Enterprise,89,175714.07,312.66

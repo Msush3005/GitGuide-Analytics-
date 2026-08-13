@@ -1,0 +1,16 @@
+customer_type,industry,customers,total_revenue,avg_order,revenue_rank
+Startup,E-commerce,58,110237.97,302.02,1
+SMB,Fintech,51,108854.38,323.01,2
+Startup,Fintech,58,102535.98,302.47,3
+SMB,E-commerce,52,96242.63,307.48,4
+SMB,SaaS,44,91214.15,301.04,5
+SMB,Healthcare,43,88597.05,305.51,6
+Startup,Healthcare,37,85391.57,319.82,7
+Enterprise,Fintech,30,63159.69,314.23,8
+Startup,SaaS,32,55430.67,291.74,9
+Enterprise,Healthcare,19,35832.84,314.32,10
+Startup,EdTech,21,34085.99,284.05,11
+SMB,EdTech,14,31265.0,367.82,12
+Enterprise,SaaS,13,30904.84,328.77,13
+Enterprise,E-commerce,17,30753.91,304.49,14
+Enterprise,EdTech,10,15062.79,289.67,15

@@ -187,10 +187,30 @@ python scripts/database_integration.py
 - **`generate_sample_cleaned_data(num_records)`**: Generates 1,000 synthetic cleaned customer records for database persistence.
 - **`task1_setup_database_connection(database_path)`**: Initializes SQLAlchemy engine `sqlite:///analytics.db` and verifies connection.
 - **`task2_load_cleaned_dataframe(df_clean, engine, table_name)`**: Writes DataFrame to SQL table (`if_exists='replace'`) and verifies row count.
+- **`task5_validate_metrics(mau_df, revenue_df, funnel_df)`**: Asserts metric integrity (zero nulls, valid ranges, logical order/revenue consistency).
+
+---
+
+## 19. SQL Filtering, Grouping & Aggregation Workflow (`scripts/sql_filtering_engine.py`)
+
+This module demonstrates advanced SQL filtering and reporting clauses (`WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, window functions) stored in version-controlled `.sql` files under `/queries/`.
+
+### Why Clause Distinction Matters
+- **WHERE vs HAVING**: `WHERE` filters raw rows before grouping (improving performance by reducing input size); `HAVING` filters aggregate group metrics after grouping.
+- **Data Quality & Reporting**: Prevents common analytics errors by separating raw data quality checks from business threshold filtering.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/sql_filtering_engine.py
+```
+
+### Function Breakdown & Responsibilities
+- **`ensure_filtering_database(database_path)`**: Ensures `customers` (with `industry`) and `transactions` (with `status`) tables exist in `analytics.db`.
+- **`load_query(query_name, queries_dir)`**: Loads raw SQL query text from `/queries/` files.
+- **`execute_and_export(query_name, engine, output_dir)`**: Executes queries via `pd.read_sql` and exports results to CSV.
+- Executed Query Files: `where_filtering.sql`, `group_by_aggregation.sql`, `having_filtering.sql`, `where_having_combined.sql`, `order_by_ranking.sql`, `percentage_share.sql`.
 - **`task3_validate_schema(engine, table_name)`**: Inspects table columns, data types, and nullability, saving report to `output/sql_schema_validation.txt`.
 - **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
-
-
-
-
