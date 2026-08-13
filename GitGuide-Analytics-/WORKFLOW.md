@@ -191,6 +191,30 @@ python scripts/database_integration.py
 - **`task4_query_and_return_results(engine, table_name)`**: Executes SELECT filters and SQL aggregations (`GROUP BY customer_type`), returning results to Pandas DataFrames and `output/sql_query_summary.csv`.
 - **`load_cleaned_data_to_database(df, table_name, database_path)`**: Reusable production pipeline function for automated data loading and validation.
 
+---
+
+## 18. SQL Business Metrics Query Design Workflow (`scripts/sql_metrics_engine.py`)
+
+This module manages version-controlled SQL metric query files in `/queries/`, executing shared queries via Python and validating mathematical integrity and business assertions.
+
+### Why SQL Metric Queries Matter
+- **Eliminates Metrics Discrepancy**: Replaces divergent notebook calculations with single, version-controlled `.sql` files (`monthly_active_users.sql`, `revenue_by_segment.sql`, `conversion_funnel.sql`).
+- **Automated Quality Control**: Asserts zero nulls, non-zero revenue bounds, and conversion percentage constraints before reporting.
+
+### How to Execute the Script
+Run the script from the project root:
+
+```bash
+python scripts/sql_metrics_engine.py
+```
+
+### Function Breakdown & Responsibilities
+- **`generate_sql_metrics_database(database_path)`**: Generates synthetic `customers`, `transactions`, and `users` tables in `analytics.db`.
+- **`load_query(query_name, queries_dir)`**: Loads raw SQL query strings from version-controlled `.sql` files under `/queries/`.
+- **`task4_execute_shared_queries(engine)`**: Executes MAU, segment revenue, and conversion funnel queries via `pd.read_sql`, exporting CSV reports to `output/`.
+- **`task5_validate_metrics(mau_df, revenue_df, funnel_df)`**: Asserts metric integrity (zero nulls, valid ranges, logical order/revenue consistency).
+
+
 
 
 
