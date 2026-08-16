@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-GitGuide Analytics - Real-Time Dashboard & Alert System
-Lesson 2.56: Alert Monitoring & Metric Threshold Detection
+GitGuide Analytics - Real-Time Dashboard & Report Delivery System
+Lesson 2.57: Insight Sharing & Email Report Integration
 
 Features:
-- Decoupled threshold configuration in alert_config.py
-- Dynamic threshold evaluation on filtered_df
-- Visual alerts via st.error (critical) and st.warning (warning)
-- Reactive recalculation on filter changes
-- Detailed plain-language risk descriptions and metric limits
+- Structured text report generator (KPI Summary, Key Finding, Recommended Action)
+- SMTP email delivery with credentials from environment variables
+- Non-blocking error handling preventing Streamlit app crashes
+- Streamlit sidebar integration for proactive email report dispatching
+- Security compliance via .env.example documentation
 
 Usage:
     streamlit run app.py
@@ -41,12 +41,14 @@ if SCRIPTS_DIR not in sys.path:
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-# Import threshold configuration engine (Task 3: Thresholds stored in config file)
+# Import threshold & email report subsystems
 from alert_config import ALERT_THRESHOLDS, check_alerts
+from report_generator import generate_report
+from email_sender import send_report_email
 
 # Page config
 st.set_page_config(
-    page_title="GitGuide Alert Monitoring & Real-Time Dashboard",
+    page_title="GitGuide Analytics & Report Delivery System",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -108,6 +110,18 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     -webkit-text-fill-color: transparent;
 }
 [data-testid="stDataFrame"] { border-radius: 12px !important; overflow: hidden !important; border: 1px solid rgba(99,102,241,0.18) !important; }
+.stDownloadButton > button {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: white !important; border: none !important;
+    border-radius: 10px !important; font-weight: 600 !important;
+    padding: 0.5rem 1.2rem !important;
+}
+[data-testid="stSidebar"] .stButton > button {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: white !important; border: none !important;
+    border-radius: 8px !important; font-weight: 600 !important;
+    font-size: 0.85rem !important; width: 100%;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -183,12 +197,7 @@ def handle_file_upload(uploaded_file):
             st.stop()
     return None
 
-# Task 1, 2, 4 & 5: Visual Alert Display Engine
 def render_alert_banner(filtered_df):
-    """
-    Computes business metrics from filtered_df, checks them against ALERT_THRESHOLDS,
-    and displays visual warnings at the top of the dashboard.
-    """
     commit_col = next((c for c in ["commits_count", "commits", "total_contributions"] if c in filtered_df.columns), None)
     review_col = next((c for c in ["avg_pr_review_days", "pr_review_days", "review_days"] if c in filtered_df.columns), None)
     lines_col  = next((c for c in ["avg_lines_changed", "lines_changed", "lines"] if c in filtered_df.columns), None)
@@ -211,19 +220,17 @@ def render_alert_banner(filtered_df):
     if triggered_alerts:
         st.header("🚨 Active Operational Threshold Alerts")
         for alert in triggered_alerts:
-            # Task 4: Complete alert message format (Metric, Value, Threshold, Plain-language risk description)
             alert_text = (
                 f"ALERT: {alert['metric']} is {alert['value']:.1f} "
                 f"(threshold limit: {alert['threshold']:.1f}). {alert['message']}"
             )
-            # Task 2: Visual Alert with st.error (critical) or st.warning (warning)
             if alert["severity"] == "critical":
                 st.error(alert_text)
             else:
                 st.warning(alert_text)
         st.divider()
 
-# Sidebar Navigation & Filter Engine
+# Sidebar Navigation & Email Trigger Integration
 def render_sidebar():
     st.sidebar.markdown("""
     <div class="sidebar-logo">
@@ -283,13 +290,21 @@ def render_sidebar():
         selected_opts = st.sidebar.multiselect("Category / Role Filter", options=all_opts, default=all_opts)
         filtered_df = filtered_df[filtered_df[role_col].isin(selected_opts)]
 
-    commit_col = next((c for c in ["commits_count", "commits", "revenue", "total_contributions"] if c in df.columns), None)
-    if commit_col and pd.api.types.is_numeric_dtype(df[commit_col]):
-        min_v = int(df[commit_col].min())
-        max_v = int(df[commit_col].max())
-        if min_v < max_v:
-            min_sel, max_sel = st.sidebar.slider("Numeric Range Threshold", min_value=min_v, max_value=max_v, value=(min_v, max_v))
-            filtered_df = filtered_df[(filtered_df[commit_col] >= min_sel) & (filtered_df[commit_col] <= max_sel)]
+    st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
+    
+    # Email Delivery Sidebar Action (Lesson 2.57)
+    st.sidebar.header("Email Report Delivery")
+    recipient = st.sidebar.text_input("Recipient Email", placeholder="stakeholder@company.com")
+    if st.sidebar.button("Send Email Report"):
+        if not recipient or "@" not in recipient:
+            st.sidebar.error("Please enter a valid recipient email.")
+        else:
+            report_text = generate_report(filtered_df, datetime.now().strftime("%Y-%m-%d"))
+            sent_ok = send_report_email(report_text, recipient)
+            if sent_ok:
+                st.sidebar.success(f"Report sent to {recipient}!")
+            else:
+                st.sidebar.warning("Email delivery skipped or failed. Verify .env credentials.")
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
     if st.sidebar.button("Reset All Filters"):
@@ -306,11 +321,9 @@ def render_sidebar():
 
     return page, filtered_df, df
 
-# Real-Time KPI Dashboard with Alert Monitoring
+# Real-Time Dashboard Page
 def render_realtime_kpi_dashboard(filtered_df, full_df):
     st.title("Real-Time Operational KPI Dashboard")
-    
-    # Task 5: Recalculates alerts dynamically whenever filters change filtered_df
     render_alert_banner(filtered_df)
 
     st.header("Live Business & Contributor Intelligence")
@@ -371,17 +384,10 @@ def render_realtime_kpi_dashboard(filtered_df, full_df):
 
     st.divider()
 
-    st.subheader("Chart 3: Metric Value Distribution (Plotly Histogram)")
-    if primary_num:
-        fig_hist = px.histogram(
-            filtered_df, x=primary_num, nbins=30,
-            color_discrete_sequence=["#8b5cf6"],
-            title=f"Distribution Frequency for '{primary_num}'"
-        )
-        fig_hist.update_layout(**plot_layout(f"Distribution Frequency for '{primary_num}'"))
-        st.plotly_chart(fig_hist, use_container_width=True)
-    else:
-        st.info("No numerical column available for distribution histogram.")
+    # Section displaying generated report text preview
+    with st.expander("Preview Executive Intelligence Report"):
+        report_text = generate_report(filtered_df, datetime.now().strftime("%Y-%m-%d"))
+        st.code(report_text, language="text")
 
 def render_guided_workflow(df):
     st.title("Multi-Step Guided Workflow")
