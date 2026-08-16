@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-GitGuide Analytics - Real-Time KPI Dashboard
-Lesson 2.55: Real-Time KPI Dashboard Development
+GitGuide Analytics - Real-Time Dashboard & Alert System
+Lesson 2.56: Alert Monitoring & Metric Threshold Detection
 
 Features:
-- @st.cache_data cached dataset loading
-- 5 reactive KPI metrics computed dynamically from filtered_df
-- 3 interactive chart types (Line trend, Bar comparison, Plotly Histogram distribution)
-- Graceful empty filter handling with st.warning and st.stop()
-- Dynamic schema discovery supporting any uploaded CSV/JSON dataset
+- Decoupled threshold configuration in alert_config.py
+- Dynamic threshold evaluation on filtered_df
+- Visual alerts via st.error (critical) and st.warning (warning)
+- Reactive recalculation on filter changes
+- Detailed plain-language risk descriptions and metric limits
 
 Usage:
     streamlit run app.py
@@ -38,10 +38,15 @@ BASE_DIR    = os.path.abspath(os.path.dirname(__file__))
 SCRIPTS_DIR = os.path.join(BASE_DIR, "scripts")
 if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+# Import threshold configuration engine (Task 3: Thresholds stored in config file)
+from alert_config import ALERT_THRESHOLDS, check_alerts
 
 # Page config
 st.set_page_config(
-    page_title="GitGuide Real-Time KPI Dashboard",
+    page_title="GitGuide Alert Monitoring & Real-Time Dashboard",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -88,10 +93,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     backdrop-filter: blur(12px);
     position: relative;
     overflow: hidden;
-    transition: transform 0.25s ease, border-color 0.25s ease;
 }
 .glass-card:hover {
-    transform: translateY(-4px);
     border-color: rgba(139,92,246,0.55);
 }
 .card-icon  { font-size: 1.5rem; margin-bottom: 8px; display: block; }
@@ -105,18 +108,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     -webkit-text-fill-color: transparent;
 }
 [data-testid="stDataFrame"] { border-radius: 12px !important; overflow: hidden !important; border: 1px solid rgba(99,102,241,0.18) !important; }
-.stDownloadButton > button {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-    color: white !important; border: none !important;
-    border-radius: 10px !important; font-weight: 600 !important;
-    padding: 0.5rem 1.2rem !important;
-}
-[data-testid="stSidebar"] .stButton > button {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-    color: white !important; border: none !important;
-    border-radius: 8px !important; font-weight: 600 !important;
-    font-size: 0.85rem !important; width: 100%;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -141,13 +132,8 @@ def plot_layout(title="", **overrides):
 PLOTLY_LAYOUT = _PLOTLY_BASE
 PALETTE = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#ec4899"]
 
-# Task 3: Applied @st.cache_data to Data Loading
 @st.cache_data
 def parse_uploaded_bytes(file_bytes, file_name):
-    """
-    Cached file loader: converts raw file bytes into Pandas DataFrame.
-    Streamlit caches the output keyed by file content hash for fast reruns.
-    """
     buffer = io.BytesIO(file_bytes)
     if file_name.endswith(".csv"):
         return pd.read_csv(buffer)
@@ -158,9 +144,6 @@ def parse_uploaded_bytes(file_bytes, file_name):
 
 @st.cache_data
 def load_default_dataset():
-    """
-    Cached default dataset loader to ensure instant startup.
-    """
     processed_path = os.path.join(BASE_DIR, "output", "processed.csv")
     raw_path       = os.path.join(BASE_DIR, "data", "raw", "sample.csv")
     if os.path.exists(processed_path):
@@ -200,6 +183,46 @@ def handle_file_upload(uploaded_file):
             st.stop()
     return None
 
+# Task 1, 2, 4 & 5: Visual Alert Display Engine
+def render_alert_banner(filtered_df):
+    """
+    Computes business metrics from filtered_df, checks them against ALERT_THRESHOLDS,
+    and displays visual warnings at the top of the dashboard.
+    """
+    commit_col = next((c for c in ["commits_count", "commits", "total_contributions"] if c in filtered_df.columns), None)
+    review_col = next((c for c in ["avg_pr_review_days", "pr_review_days", "review_days"] if c in filtered_df.columns), None)
+    lines_col  = next((c for c in ["avg_lines_changed", "lines_changed", "lines"] if c in filtered_df.columns), None)
+
+    single_pct = ((filtered_df[commit_col] == 1).mean() * 100) if commit_col and len(filtered_df) else 0.0
+    avg_rev    = filtered_df[review_col].mean() if review_col and len(filtered_df) else 0.0
+    avg_lines  = filtered_df[lines_col].mean() if lines_col and len(filtered_df) else 0.0
+    total_cells = filtered_df.shape[0] * filtered_df.shape[1] if len(filtered_df) > 0 else 1
+    null_pct   = (filtered_df.isnull().sum().sum() / total_cells) * 100
+
+    current_metrics = {
+        "single_commit_dropout": single_pct,
+        "avg_pr_review_days": avg_rev,
+        "null_percentage": null_pct,
+        "avg_lines_changed": avg_lines
+    }
+
+    triggered_alerts = check_alerts(current_metrics, ALERT_THRESHOLDS)
+
+    if triggered_alerts:
+        st.header("🚨 Active Operational Threshold Alerts")
+        for alert in triggered_alerts:
+            # Task 4: Complete alert message format (Metric, Value, Threshold, Plain-language risk description)
+            alert_text = (
+                f"ALERT: {alert['metric']} is {alert['value']:.1f} "
+                f"(threshold limit: {alert['threshold']:.1f}). {alert['message']}"
+            )
+            # Task 2: Visual Alert with st.error (critical) or st.warning (warning)
+            if alert["severity"] == "critical":
+                st.error(alert_text)
+            else:
+                st.warning(alert_text)
+        st.divider()
+
 # Sidebar Navigation & Filter Engine
 def render_sidebar():
     st.sidebar.markdown("""
@@ -238,7 +261,6 @@ def render_sidebar():
 
     filtered_df = df.copy()
 
-    # Dynamic Column Discovery (Task 5: Generic End-to-End Execution)
     time_col = next((c for c in ["timestamp", "date", "created_at"] if c in df.columns), None)
     if time_col:
         try:
@@ -276,7 +298,6 @@ def render_sidebar():
                 del st.session_state[key]
         st.rerun()
 
-    # Task 4: Empty Filtered Results Handling
     if len(filtered_df) == 0:
         st.warning("No data matches current filters. Broaden your selection.")
         st.stop()
@@ -285,19 +306,19 @@ def render_sidebar():
 
     return page, filtered_df, df
 
-# Task 1 & Task 2: Real-Time KPI Dashboard Page
+# Real-Time KPI Dashboard with Alert Monitoring
 def render_realtime_kpi_dashboard(filtered_df, full_df):
     st.title("Real-Time Operational KPI Dashboard")
-    st.header("Live Business & Contributor Intelligence")
-    st.markdown("Metrics and charts update dynamically as filters or datasets change.")
+    
+    # Task 5: Recalculates alerts dynamically whenever filters change filtered_df
+    render_alert_banner(filtered_df)
 
-    # Dynamic Column Resolution for Generic Datasets (Task 5)
+    st.header("Live Business & Contributor Intelligence")
+    
     num_cols = filtered_df.select_dtypes(include="number").columns.tolist()
     primary_num = next((c for c in ["commits_count", "revenue", "total_contributions", "lines_changed"] if c in filtered_df.columns), num_cols[0] if num_cols else None)
     entity_col  = next((c for c in ["contributor_login", "customer_id", "user_id", "contributor_id"] if c in filtered_df.columns), filtered_df.columns[0])
-    review_col  = next((c for c in ["avg_pr_review_days", "pr_review_days", "review_days"] if c in filtered_df.columns), None)
 
-    # Task 1: Five Reactive KPI Metrics computed from filtered_df
     total_val = filtered_df[primary_num].sum() if primary_num else 0
     avg_val   = filtered_df[primary_num].mean() if primary_num else 0
     row_count = len(filtered_df)
@@ -321,7 +342,6 @@ def render_realtime_kpi_dashboard(filtered_df, full_df):
 
     st.divider()
 
-    # Task 2: Three Different Chart Types Wired to filtered_df
     st.header("Visual Analytics & Distributions")
 
     time_col = next((c for c in ["timestamp", "date", "created_at"] if c in filtered_df.columns), None)
@@ -330,7 +350,6 @@ def render_realtime_kpi_dashboard(filtered_df, full_df):
     col_left, col_right = st.columns(2)
 
     with col_left:
-        # Chart 1: Line Chart (Trend Over Time)
         st.subheader("Chart 1: Activity Trend Over Time (Line Chart)")
         if time_col and primary_num:
             df_t = filtered_df.copy()
@@ -342,7 +361,6 @@ def render_realtime_kpi_dashboard(filtered_df, full_df):
             st.info("No date column detected for line trend.")
 
     with col_right:
-        # Chart 2: Bar Chart (Category Comparison)
         st.subheader("Chart 2: Comparison by Category (Bar Chart)")
         if role_col and primary_num:
             df_cat = filtered_df.groupby(role_col)[primary_num].sum().reset_index()
@@ -353,7 +371,6 @@ def render_realtime_kpi_dashboard(filtered_df, full_df):
 
     st.divider()
 
-    # Chart 3: Plotly Histogram (Distribution)
     st.subheader("Chart 3: Metric Value Distribution (Plotly Histogram)")
     if primary_num:
         fig_hist = px.histogram(
@@ -366,17 +383,14 @@ def render_realtime_kpi_dashboard(filtered_df, full_df):
     else:
         st.info("No numerical column available for distribution histogram.")
 
-# Guided Workflow Page
 def render_guided_workflow(df):
     st.title("Multi-Step Guided Workflow")
     st.write(f"Active Session Step: Step {st.session_state['workflow_step']}")
 
-# Trends & Distributions Page
 def render_trends_page(filtered_df):
     st.title("Trends & Detailed Distributions")
     st.dataframe(filtered_df.head(20), use_container_width=True)
 
-# Data Explorer Page
 def render_explorer(filtered_df):
     st.title("Data Explorer")
     st.dataframe(filtered_df, use_container_width=True, height=350)
