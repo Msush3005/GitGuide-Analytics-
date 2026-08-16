@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-GitGuide Analytics - Streamlit Dashboard
-Dataset Upload & Dynamic Preview System (Lesson 2.52)
+GitGuide Analytics - Streamlit Interactive Dashboard
+Filters & Interactive Widgets (Lesson 2.53)
 
-Accepts CSV and JSON files, validates them, and displays a dynamic preview
-with column summary, descriptive statistics, and downstream exploration.
+Wires date pickers, multi-select dropdowns, range sliders, and radio buttons
+to filter DataFrames dynamically with meaningful defaults, empty state warnings,
+and a 1-click Reset Filters button.
 
 Usage:
     streamlit run app.py
@@ -13,6 +14,7 @@ Usage:
 import os
 import sys
 import asyncio
+from datetime import datetime, date
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -35,7 +37,7 @@ if SCRIPTS_DIR not in sys.path:
 
 # Page config
 st.set_page_config(
-    page_title="GitGuide Analytics - Data Upload & Preview",
+    page_title="GitGuide Analytics - Interactive Dashboard",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -173,7 +175,6 @@ def load_default_dataset():
         "timestamp": dates.strftime("%Y-%m-%d"),
     })
 
-# Task 1 & 4: File Upload & Validation with st.file_uploader
 def handle_file_upload(uploaded_file):
     if uploaded_file is not None:
         try:
@@ -192,11 +193,11 @@ def handle_file_upload(uploaded_file):
             st.success(f"Loaded: {uploaded_file.name} ({len(df):,} rows, {len(df.columns)} columns)")
             return df
         except Exception as e:
-            st.error(f"Could not read this file. Please check the format and try again. ({e})")
+            st.error(f"Could not read this file. ({e})")
             st.stop()
     return None
 
-# Sidebar Navigation & Upload Trigger
+# Task 1, 2, 3, 4 & 5: Sidebar Navigation & Filter Wiring Engine
 def render_sidebar():
     st.sidebar.markdown("""
     <div class="sidebar-logo">
@@ -206,6 +207,7 @@ def render_sidebar():
     """, unsafe_allow_html=True)
     st.sidebar.title("Navigation")
     
+    # Widget 1: Navigation Radio (Radio Button)
     page = st.sidebar.radio(
         "Select Section",
         ["Overview", "Trends", "Data Explorer", "Insights"],
@@ -213,201 +215,219 @@ def render_sidebar():
     )
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-    st.sidebar.header("Dataset Upload")
+    st.sidebar.header("Dataset Upload & Source")
 
-    # Task 1: st.file_uploader
-    uploaded_file = st.sidebar.file_uploader("Upload your dataset", type=["csv", "json"])
+    uploaded_file = st.sidebar.file_uploader("Upload dataset (CSV/JSON)", type=["csv", "json"])
     df = handle_file_upload(uploaded_file)
 
-    st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-    st.sidebar.header("Live GitHub Ingestion")
-
-    github_url = st.sidebar.text_input("Repository URL or owner/repo", placeholder="https://github.com/facebook/react", label_visibility="collapsed")
-    fetch_clicked = st.sidebar.button("Fetch Live GitHub Data")
-
-    fetched_csv = os.path.join(BASE_DIR, "data", "raw", "fetched_github_repo_data.csv")
-
-    if fetch_clicked and github_url.strip():
-        with st.spinner("Fetching from GitHub..."):
+    if df is None:
+        fetched_csv = os.path.join(BASE_DIR, "data", "raw", "fetched_github_repo_data.csv")
+        if os.path.exists(fetched_csv):
             try:
-                from github_repo_ingestion import generate_csv_from_github_api
-                df_fetched, report = generate_csv_from_github_api(github_url.strip(), output_dir=BASE_DIR)
-                st.sidebar.success(f"{report['repository']} — {report['total_contributors']} contributors")
-                df = df_fetched
-            except Exception as e:
-                st.sidebar.error(f"Fetch failed: {e}")
-
-    if df is None and os.path.exists(fetched_csv):
-        try:
-            df = pd.read_csv(fetched_csv)
-        except Exception:
-            df = None
+                df = pd.read_csv(fetched_csv)
+            except Exception:
+                df = None
 
     if df is None:
         df = load_default_dataset()
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-    st.sidebar.markdown(f"<div style='color:#475569;font-size:0.72rem;'><b style='color:#64748b'>Dataset Scope</b>: {len(df):,} rows, {len(df.columns)} cols</div>", unsafe_allow_html=True)
-    
-    return page, df
+    st.sidebar.header("Interactive Filters")
 
-# Section 1: Overview & Automatic Preview (Task 2, 3 & 5)
-def render_overview(df):
+    # Filter Chain Implementation (Task 1 & Task 3: Meaningful Defaults)
+    filtered_df = df.copy()
+
+    # Widget 2: Date Range Picker (Task 1)
+    time_col = next((c for c in ["timestamp", "date", "created_at"] if c in df.columns), None)
+    if time_col:
+        try:
+            df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
+            min_date = df[time_col].min().date()
+            max_date = df[time_col].max().date()
+            
+            # Meaningful Default: Full date range
+            date_range = st.sidebar.date_input("Date Range", value=(min_date, max_date))
+            
+            if isinstance(date_range, tuple) and len(date_range) == 2:
+                start_d, end_d = date_range
+                filtered_df = filtered_df[
+                    (pd.to_datetime(filtered_df[time_col]).dt.date >= start_d) &
+                    (pd.to_datetime(filtered_df[time_col]).dt.date <= end_d)
+                ]
+        except Exception:
+            pass
+
+    # Widget 3: Multi-Select Categorical Filter (Task 1 & Task 3)
+    role_col = next((c for c in ["contributor_role", "role", "segment"] if c in df.columns), None)
+    if role_col:
+        all_roles = sorted(df[role_col].dropna().unique().tolist())
+        # Meaningful Default: All options selected
+        selected_roles = st.sidebar.multiselect("Contributor Roles", options=all_roles, default=all_roles)
+        filtered_df = filtered_df[filtered_df[role_col].isin(selected_roles)]
+
+    # Widget 4: Range Slider for Numeric Threshold (Task 1 & Task 3)
+    commit_col = next((c for c in ["commits_count", "commits", "total_contributions", "revenue"] if c in df.columns), None)
+    if commit_col and pd.api.types.is_numeric_dtype(df[commit_col]):
+        min_c = int(df[commit_col].min())
+        max_c = int(df[commit_col].max())
+        if min_c < max_c:
+            # Meaningful Default: Full numeric range
+            min_val, max_val = st.sidebar.slider("Commits Threshold Range", min_value=min_c, max_value=max_c, value=(min_c, max_c))
+            filtered_df = filtered_df[(filtered_df[commit_col] >= min_val) & (filtered_df[commit_col] <= max_val)]
+
+    # Task 5: Reset Filters Button
+    if st.sidebar.button("Reset Filters"):
+        st.rerun()
+
+    # Task 4: Empty Filter Combinations Handling
+    if len(filtered_df) == 0:
+        st.warning("No data matches the current filter selection. Try broadening your criteria or clicking 'Reset Filters'.")
+        st.stop()
+
+    st.sidebar.markdown(f"<div style='color:#475569;font-size:0.72rem;'><b style='color:#818cf8'>Filtered Scope</b>: {len(filtered_df):,} of {len(df):,} rows</div>", unsafe_allow_html=True)
+    
+    return page, filtered_df, df
+
+# Section 1: Overview
+def render_overview(filtered_df, full_df):
     st.title("Business Overview & Dataset Preview")
     
-    # Task 2: Dataset Preview metrics
-    st.header("Dataset Overview")
-    col1, col2, col3 = st.columns(3)
+    st.header("Key Performance Indicators")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    commit_col      = next((c for c in ["commits_count","commits","total_contributions"] if c in filtered_df.columns), filtered_df.select_dtypes(include=np.number).columns[0] if len(filtered_df.select_dtypes(include=np.number).columns) else None)
+    contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in filtered_df.columns), filtered_df.columns[0])
+    review_col      = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in filtered_df.columns), None)
+
+    total_commits   = int(filtered_df[commit_col].sum()) if commit_col else "N/A"
+    unique_contribs = filtered_df[contributor_col].nunique()
+    avg_review      = f"{filtered_df[review_col].mean():.1f}d" if review_col else "N/A"
+    single_ratio    = f"{(filtered_df[commit_col] == 1).mean() * 100:.1f}%" if commit_col else "N/A"
+    lines_sum       = f"{filtered_df['avg_lines_changed'].sum():,}" if 'avg_lines_changed' in filtered_df.columns else "N/A"
+
     with col1:
-        st.metric("Rows", f"{len(df):,}")
+        st.metric("Contributors", f"{unique_contribs:,}", f"of {full_df[contributor_col].nunique():,} total")
     with col2:
-        st.metric("Columns", str(len(df.columns)))
+        st.metric("Total Commits", f"{total_commits:,}" if isinstance(total_commits, int) else total_commits)
     with col3:
-        total_cells = df.shape[0] * df.shape[1] if len(df) > 0 else 1
-        null_pct = (df.isnull().sum().sum() / total_cells) * 100
-        st.metric("Null %", f"{null_pct:.1f}%")
+        st.metric("Avg PR Review", avg_review)
+    with col4:
+        st.metric("Single-Commit %", single_ratio)
+    with col5:
+        st.metric("Lines Changed", lines_sum)
 
     st.divider()
 
-    # Task 2: First 10 Rows
-    st.subheader("First 10 Rows")
-    st.dataframe(df.head(10), use_container_width=True, height=300)
+    st.header("Dataset Overview & Filtered Preview")
+    col_l, col_r = st.columns([3, 2])
+    with col_l:
+        st.subheader(f"Filtered Data (Showing Top {min(10, len(filtered_df))} Rows)")
+        st.dataframe(filtered_df.head(10), use_container_width=True, height=300)
+    with col_r:
+        st.subheader("Schema Integrity Audit")
+        schema = pd.DataFrame({
+            "Type": filtered_df.dtypes.astype(str),
+            "Non-Null": filtered_df.notnull().sum(),
+            "Nulls": filtered_df.isnull().sum(),
+            "Fill %": (filtered_df.notnull().sum() / len(filtered_df) * 100).round(1).astype(str) + "%",
+        })
+        st.dataframe(schema, use_container_width=True, height=300)
 
     st.divider()
 
-    # Task 2: Column Summary
-    st.subheader("Column Summary")
-    summary = pd.DataFrame({
-        "Column": df.columns,
-        "Type": df.dtypes.astype(str).values,
-        "Non-Null": df.notnull().sum().values,
-        "Null Count": df.isnull().sum().values,
-        "Null %": (df.isnull().sum() / len(df) * 100).round(1).values
-    })
-    st.dataframe(summary, use_container_width=True, height=250)
-
-    st.divider()
-
-    # Task 3: Display Basic Statistics
     st.subheader("Descriptive Statistics")
-    num_df = df.select_dtypes(include="number")
+    num_df = filtered_df.select_dtypes(include="number")
     if not num_df.empty:
         st.dataframe(num_df.describe(), use_container_width=True)
     else:
         st.info("No numeric columns available for descriptive statistics.")
 
-    st.divider()
-
-    # Task 5: Downstream Exploration Demonstration
-    st.subheader("Quick Exploration")
-    numeric_cols = num_df.columns.tolist()
-    if numeric_cols:
-        selected_col = st.selectbox("Select a column to visualise", numeric_cols)
-        st.bar_chart(df[selected_col].value_counts().head(20))
-    else:
-        st.info("Upload dataset with numeric columns for instant chart exploration.")
-
-    with st.expander("About This Upload & Preview System"):
+    with st.expander("Filter Chain & Reset Guide"):
         st.write("""
-        * **Accepted File Formats**: CSV (`.csv`) and JSON (`.json`).
-        * **Parsing**: File bytes are automatically converted to a Pandas DataFrame in memory without manual preprocessing.
-        * **Null Audit**: Null % represents total missing cells across all columns divided by total grid cells.
-        * **Error Handling**: Malformed or empty files show user-friendly error notifications without displaying Python tracebacks.
+        * **Date Picker**: Filters time-series data using custom start and end boundaries.
+        * **Multi-Select**: Filters categorical roles dynamically. Default includes all items.
+        * **Range Slider**: Sets numeric threshold boundaries.
+        * **Reset Button**: Restores all filters to default dataset scope in 1 click.
         """)
 
 # Section 2: Trends
-def render_trends(df):
+def render_trends(filtered_df):
     st.title("Trend Analysis")
     st.header("Activity & Velocity Trends")
-    st.subheader("Time-Series Exploration")
+    st.subheader("Reactive Time-Series Exploration")
     
-    commit_col = next((c for c in ["commits_count","commits","total_contributions"] if c in df.columns), df.select_dtypes(include=np.number).columns[0] if len(df.select_dtypes(include=np.number).columns) else None)
-    contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in df.columns), df.columns[0])
-    time_col   = next((c for c in ["timestamp","date","created_at"] if c in df.columns), None)
-    role_col   = next((c for c in ["contributor_role","role","branch"] if c in df.columns), None)
+    commit_col = next((c for c in ["commits_count","commits","total_contributions"] if c in filtered_df.columns), filtered_df.select_dtypes(include=np.number).columns[0] if len(filtered_df.select_dtypes(include=np.number).columns) else None)
+    contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in filtered_df.columns), filtered_df.columns[0])
+    time_col   = next((c for c in ["timestamp","date","created_at"] if c in filtered_df.columns), None)
+    role_col   = next((c for c in ["contributor_role","role","branch"] if c in filtered_df.columns), None)
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Commit Activity Over Time")
         if time_col and commit_col:
-            df_t = df.copy()
+            df_t = filtered_df.copy()
             df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
             df_g = df_t.groupby(df_t[time_col].dt.date)[commit_col].sum().reset_index()
             df_g.columns = ["date", "commits"]
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=df_g["date"], y=df_g["commits"], mode="lines", fill="tozeroy", line=dict(color="#6366f1", width=2.5)))
-            fig.update_layout(**plot_layout("Daily Commit Trend"))
+            fig.update_layout(**plot_layout("Filtered Daily Commit Trend"))
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("No timestamp column detected in dataset.")
+            st.info("No timestamp column detected.")
 
     with col2:
-        st.subheader("Role Contribution Share")
+        st.subheader("Role Breakdown")
         if role_col:
-            role_counts = df[role_col].value_counts().reset_index()
+            role_counts = filtered_df[role_col].value_counts().reset_index()
             role_counts.columns = ["role", "count"]
             fig = go.Figure(go.Pie(labels=role_counts["role"], values=role_counts["count"], hole=0.55, marker=dict(colors=PALETTE[:len(role_counts)])))
-            fig.update_layout(**plot_layout("Role Breakdown", showlegend=False))
+            fig.update_layout(**plot_layout("Filtered Role Distribution", showlegend=False))
             st.plotly_chart(fig, use_container_width=True)
 
 # Section 3: Data Explorer
-def render_explorer(df):
+def render_explorer(filtered_df):
     st.title("Data Explorer")
-    st.header("Interactive Data Filtering")
-    st.subheader("Search & Filter Active Dataset")
+    st.header("Interactive Search & Export")
 
-    c1, c2 = st.columns(2)
-    with c1:
-        if "contributor_role" in df.columns:
-            roles = ["ALL"] + sorted(df["contributor_role"].dropna().unique().tolist())
-            selected_role = st.selectbox("Filter by Role", roles)
-        else:
-            selected_role = "ALL"
-    with c2:
-        search_q = st.text_input("Search keyword", placeholder="Search...").strip().lower()
-
-    filtered = df.copy()
-    if selected_role != "ALL" and "contributor_role" in filtered.columns:
-        filtered = filtered[filtered["contributor_role"] == selected_role]
+    search_q = st.text_input("Search (keyword across all columns)", placeholder="Type to search...").strip().lower()
+    df_search = filtered_df.copy()
     if search_q:
-        mask = filtered.astype(str).apply(lambda row: row.str.lower().str.contains(search_q).any(), axis=1)
-        filtered = filtered[mask]
+        mask = df_search.astype(str).apply(lambda row: row.str.lower().str.contains(search_q).any(), axis=1)
+        df_search = df_search[mask]
 
-    st.dataframe(filtered, use_container_width=True, height=350)
-    st.download_button("Download CSV", data=filtered.to_csv(index=False).encode("utf-8"), file_name="exported_data.csv", mime="text/csv")
+    st.subheader(f"Filtered Results ({len(df_search):,} records)")
+    st.dataframe(df_search, use_container_width=True, height=350)
+    st.download_button("Download Filtered CSV", data=df_search.to_csv(index=False).encode("utf-8"), file_name="filtered_data.csv", mime="text/csv")
 
 # Section 4: Insights Report
-def render_insights(df):
+def render_insights(filtered_df):
     st.title("Business Insights Report")
-    st.header("Executive Summary")
-    st.subheader("Automated Dataset Health & Bottleneck Report")
+    st.header("Automated Intelligence Summary")
 
-    commit_col = next((c for c in ["commits_count","commits"] if c in df.columns), None)
-    review_col = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in df.columns), None)
+    commit_col = next((c for c in ["commits_count","commits"] if c in filtered_df.columns), None)
+    review_col = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in filtered_df.columns), None)
 
-    avg_review = round(df[review_col].mean(), 2) if review_col else None
-    pct_single = round((df[commit_col] == 1).mean() * 100, 1) if commit_col else None
-    null_rate  = round(df.isnull().sum().sum() / (len(df) * len(df.columns)) * 100, 2)
+    avg_review = round(filtered_df[review_col].mean(), 2) if review_col else None
+    pct_single = round((filtered_df[commit_col] == 1).mean() * 100, 1) if commit_col else None
 
-    ci1, ci2, ci3 = st.columns(3)
+    ci1, ci2 = st.columns(2)
     with ci1:
-        st.metric("Avg Review Days", f"{avg_review:.1f}d" if avg_review is not None else "N/A")
+        st.metric("Avg PR Review", f"{avg_review:.1f}d" if avg_review is not None else "N/A")
     with ci2:
-        st.metric("Single-Commit %", f"{pct_single:.1f}%" if pct_single is not None else "N/A")
-    with ci3:
-        st.metric("Null Rate", f"{null_rate}%")
+        st.metric("Single-Commit Dropout %", f"{pct_single:.1f}%" if pct_single is not None else "N/A")
 
 # Main Controller
 def main():
-    page, df = render_sidebar()
+    page, filtered_df, full_df = render_sidebar()
     if page == "Overview":
-        render_overview(df)
+        render_overview(filtered_df, full_df)
     elif page == "Trends":
-        render_trends(df)
+        render_trends(filtered_df)
     elif page == "Data Explorer":
-        render_explorer(df)
+        render_explorer(filtered_df)
     elif page == "Insights":
-        render_insights(df)
+        render_insights(filtered_df)
 
 if __name__ == "__main__":
     main()
