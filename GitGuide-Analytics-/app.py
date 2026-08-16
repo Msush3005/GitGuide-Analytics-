@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-GitGuide Analytics - Streamlit Multi-Section Dashboard
-App Structure & Navigation (Lesson 2.51)
+GitGuide Analytics - Streamlit Dashboard
+Dataset Upload & Dynamic Preview System (Lesson 2.52)
 
-Scaffolds a multi-section Streamlit application with sidebar navigation,
-layout columns, expanders for progressive disclosure, and consistent visual hierarchy.
+Accepts CSV and JSON files, validates them, and displays a dynamic preview
+with column summary, descriptive statistics, and downstream exploration.
 
 Usage:
     streamlit run app.py
@@ -35,7 +35,7 @@ if SCRIPTS_DIR not in sys.path:
 
 # Page config
 st.set_page_config(
-    page_title="GitGuide Analytics Dashboard",
+    page_title="GitGuide Analytics - Data Upload & Preview",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -68,16 +68,13 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-radius: 16px;
     padding: 22px 20px 18px 20px;
     backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     position: relative;
     overflow: hidden;
-    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-    cursor: default;
+    transition: transform 0.25s ease, border-color 0.25s ease;
 }
 .glass-card:hover {
     transform: translateY(-4px);
     border-color: rgba(139,92,246,0.55);
-    box-shadow: 0 12px 32px rgba(99,102,241,0.18);
 }
 .card-icon  { font-size: 1.5rem; margin-bottom: 8px; display: block; }
 .card-label { color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
@@ -92,10 +89,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-radius: 0 12px 12px 0;
     padding: 18px 20px;
     margin-bottom: 12px;
-    backdrop-filter: blur(8px);
-    transition: background 0.2s;
 }
-.insight-card:hover  { background: rgba(255,255,255,0.06); }
 .insight-card.blue   { border-color: #3b82f6; }
 .insight-card.purple { border-color: #8b5cf6; }
 .insight-card.green  { border-color: #10b981; }
@@ -109,25 +103,19 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     background: linear-gradient(90deg, #6366f1, #8b5cf6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 [data-testid="stDataFrame"] { border-radius: 12px !important; overflow: hidden !important; border: 1px solid rgba(99,102,241,0.18) !important; }
 .stDownloadButton > button {
     background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
     color: white !important; border: none !important;
     border-radius: 10px !important; font-weight: 600 !important;
-    padding: 0.5rem 1.2rem !important; transition: opacity 0.2s;
+    padding: 0.5rem 1.2rem !important;
 }
-.stDownloadButton > button:hover { opacity: 0.88 !important; }
 [data-testid="stSidebar"] .stButton > button {
     background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
     color: white !important; border: none !important;
     border-radius: 8px !important; font-weight: 600 !important;
     font-size: 0.85rem !important; width: 100%;
-    transition: box-shadow 0.2s, opacity 0.2s;
-}
-[data-testid="stSidebar"] .stButton > button:hover {
-    box-shadow: 0 4px 16px rgba(99,102,241,0.4) !important; opacity: 0.92 !important;
 }
 .stSelectbox > div > div,
 .stTextInput > div > div > input {
@@ -159,20 +147,6 @@ def plot_layout(title="", **overrides):
 PLOTLY_LAYOUT = _PLOTLY_BASE
 PALETTE = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#ec4899"]
 
-def glass_metric(icon_html, label, value, delta=None, delta_type="neutral"):
-    delta_html = ""
-    if delta:
-        cls = "delta-" + delta_type
-        arrow = "+" if delta_type == "positive" else ("-" if delta_type == "negative" else "")
-        delta_html = f'<span class="card-delta {cls}">{arrow} {delta}</span>'
-    return f"""
-    <div class="glass-card">
-        <span class="card-icon">{icon_html}</span>
-        <div class="card-label">{label}</div>
-        <div class="card-value">{value}</div>
-        {delta_html}
-    </div>"""
-
 @st.cache_data
 def load_default_dataset():
     processed_path = os.path.join(BASE_DIR, "output", "processed.csv")
@@ -199,7 +173,30 @@ def load_default_dataset():
         "timestamp": dates.strftime("%Y-%m-%d"),
     })
 
-# Sidebar Navigation (Task 1)
+# Task 1 & 4: File Upload & Validation with st.file_uploader
+def handle_file_upload(uploaded_file):
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+            elif uploaded_file.name.endswith(".json"):
+                df = pd.read_json(uploaded_file)
+            else:
+                st.error("Unsupported file type. Please upload a CSV or JSON file.")
+                st.stop()
+
+            if len(df) == 0:
+                st.warning("The uploaded file is empty. Please check your dataset.")
+                st.stop()
+
+            st.success(f"Loaded: {uploaded_file.name} ({len(df):,} rows, {len(df.columns)} columns)")
+            return df
+        except Exception as e:
+            st.error(f"Could not read this file. Please check the format and try again. ({e})")
+            st.stop()
+    return None
+
+# Sidebar Navigation & Upload Trigger
 def render_sidebar():
     st.sidebar.markdown("""
     <div class="sidebar-logo">
@@ -216,17 +213,19 @@ def render_sidebar():
     )
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
+    st.sidebar.header("Dataset Upload")
+
+    # Task 1: st.file_uploader
+    uploaded_file = st.sidebar.file_uploader("Upload your dataset", type=["csv", "json"])
+    df = handle_file_upload(uploaded_file)
+
+    st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
     st.sidebar.header("Live GitHub Ingestion")
 
-    github_url = st.sidebar.text_input(
-        "Repository URL or owner/repo",
-        placeholder="https://github.com/facebook/react",
-        label_visibility="collapsed"
-    )
+    github_url = st.sidebar.text_input("Repository URL or owner/repo", placeholder="https://github.com/facebook/react", label_visibility="collapsed")
     fetch_clicked = st.sidebar.button("Fetch Live GitHub Data")
 
     fetched_csv = os.path.join(BASE_DIR, "data", "raw", "fetched_github_repo_data.csv")
-    df = None
 
     if fetch_clicked and github_url.strip():
         with st.spinner("Fetching from GitHub..."):
@@ -241,8 +240,6 @@ def render_sidebar():
     if df is None and os.path.exists(fetched_csv):
         try:
             df = pd.read_csv(fetched_csv)
-            repo_name = df["repository_name"].iloc[0] if "repository_name" in df.columns and len(df) else "GitHub repo"
-            st.sidebar.markdown(f"<span style='color:#64748b;font-size:0.78rem'>Cached: <b style='color:#818cf8'>{repo_name}</b> ({len(df)} contributors)</span>", unsafe_allow_html=True)
         except Exception:
             df = None
 
@@ -254,65 +251,75 @@ def render_sidebar():
     
     return page, df
 
-# Section 1: Overview (Above the fold KPI cards + st.columns + st.expander)
+# Section 1: Overview & Automatic Preview (Task 2, 3 & 5)
 def render_overview(df):
-    st.title("Business Overview")
+    st.title("Business Overview & Dataset Preview")
     
-    # KPI row above the fold using st.columns (Task 2 & Task 5)
-    st.header("Key Performance Indicators")
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    commit_col      = next((c for c in ["commits_count","commits","total_contributions"] if c in df.columns), df.select_dtypes(include=np.number).columns[0] if len(df.select_dtypes(include=np.number).columns) else None)
-    contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in df.columns), df.columns[0])
-    review_col      = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in df.columns), None)
-
-    total_commits   = int(df[commit_col].sum()) if commit_col else "N/A"
-    unique_contribs = df[contributor_col].nunique()
-    avg_review      = f"{df[review_col].mean():.1f}d" if review_col else "N/A"
-    single_ratio    = f"{(df[commit_col] == 1).mean() * 100:.1f}%" if commit_col else "N/A"
-    lines_sum       = f"{df['avg_lines_changed'].sum():,}" if 'avg_lines_changed' in df.columns else "N/A"
-
+    # Task 2: Dataset Preview metrics
+    st.header("Dataset Overview")
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Contributors", f"{unique_contribs:,}", "+5.2%")
+        st.metric("Rows", f"{len(df):,}")
     with col2:
-        st.metric("Total Commits", f"{total_commits:,}" if isinstance(total_commits, int) else total_commits, "+12.5%")
+        st.metric("Columns", str(len(df.columns)))
     with col3:
-        st.metric("Avg PR Review", avg_review, "-0.5d", delta_color="inverse")
-    with col4:
-        st.metric("Single-Commit %", single_ratio, "-2.1%", delta_color="inverse")
-    with col5:
-        st.metric("Lines Changed", lines_sum, "+15.8%")
+        total_cells = df.shape[0] * df.shape[1] if len(df) > 0 else 1
+        null_pct = (df.isnull().sum().sum() / total_cells) * 100
+        st.metric("Null %", f"{null_pct:.1f}%")
 
-    st.divider()  # Visual Hierarchy (Task 3)
+    st.divider()
 
-    st.header("Dataset Overview & Completeness")
-    col_l, col_r = st.columns([3, 2])
-    with col_l:
-        st.subheader("Data Preview (Top 10 Rows)")
-        st.dataframe(df.head(10), use_container_width=True, height=300)
-    with col_r:
-        st.subheader("Schema Integrity Audit")
-        schema = pd.DataFrame({
-            "Type": df.dtypes.astype(str),
-            "Non-Null": df.notnull().sum(),
-            "Nulls": df.isnull().sum(),
-            "Fill %": (df.notnull().sum() / len(df) * 100).round(1).astype(str) + "%",
-        })
-        st.dataframe(schema, use_container_width=True, height=300)
+    # Task 2: First 10 Rows
+    st.subheader("First 10 Rows")
+    st.dataframe(df.head(10), use_container_width=True, height=300)
 
-    # Expander for progressive disclosure (Task 2)
-    with st.expander("About These Metrics & Calculation Methodology"):
+    st.divider()
+
+    # Task 2: Column Summary
+    st.subheader("Column Summary")
+    summary = pd.DataFrame({
+        "Column": df.columns,
+        "Type": df.dtypes.astype(str).values,
+        "Non-Null": df.notnull().sum().values,
+        "Null Count": df.isnull().sum().values,
+        "Null %": (df.isnull().sum() / len(df) * 100).round(1).values
+    })
+    st.dataframe(summary, use_container_width=True, height=250)
+
+    st.divider()
+
+    # Task 3: Display Basic Statistics
+    st.subheader("Descriptive Statistics")
+    num_df = df.select_dtypes(include="number")
+    if not num_df.empty:
+        st.dataframe(num_df.describe(), use_container_width=True)
+    else:
+        st.info("No numeric columns available for descriptive statistics.")
+
+    st.divider()
+
+    # Task 5: Downstream Exploration Demonstration
+    st.subheader("Quick Exploration")
+    numeric_cols = num_df.columns.tolist()
+    if numeric_cols:
+        selected_col = st.selectbox("Select a column to visualise", numeric_cols)
+        st.bar_chart(df[selected_col].value_counts().head(20))
+    else:
+        st.info("Upload dataset with numeric columns for instant chart exploration.")
+
+    with st.expander("About This Upload & Preview System"):
         st.write("""
-        * **Revenue & Commit Calculation**: Revenue impact is estimated based on commit contributions and contributor retention rates.
-        * **PR Review SLA**: PR review latency is calculated as `(merged_at - created_at)` in days.
-        * **Single-Commit Dropout**: Percentage of contributors with exactly 1 commit before abandoning the project.
+        * **Accepted File Formats**: CSV (`.csv`) and JSON (`.json`).
+        * **Parsing**: File bytes are automatically converted to a Pandas DataFrame in memory without manual preprocessing.
+        * **Null Audit**: Null % represents total missing cells across all columns divided by total grid cells.
+        * **Error Handling**: Malformed or empty files show user-friendly error notifications without displaying Python tracebacks.
         """)
 
-# Section 2: Trends (Task 1, 2 & 3)
+# Section 2: Trends
 def render_trends(df):
     st.title("Trend Analysis")
-    st.header("Commit Activity Trends")
-    st.subheader("Monthly & Daily Velocity Tracking")
+    st.header("Activity & Velocity Trends")
+    st.subheader("Time-Series Exploration")
     
     commit_col = next((c for c in ["commits_count","commits","total_contributions"] if c in df.columns), df.select_dtypes(include=np.number).columns[0] if len(df.select_dtypes(include=np.number).columns) else None)
     contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in df.columns), df.columns[0])
@@ -321,69 +328,43 @@ def render_trends(df):
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Total Commits Over Time")
+        st.subheader("Commit Activity Over Time")
         if time_col and commit_col:
             df_t = df.copy()
             df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
             df_g = df_t.groupby(df_t[time_col].dt.date)[commit_col].sum().reset_index()
             df_g.columns = ["date", "commits"]
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=df_g["date"], y=df_g["commits"],
-                mode="lines", fill="tozeroy",
-                line=dict(color="#6366f1", width=2.5),
-                fillcolor="rgba(99,102,241,0.12)"
-            ))
-            fig.update_layout(**plot_layout("Commit Velocity Trend"))
+            fig.add_trace(go.Scatter(x=df_g["date"], y=df_g["commits"], mode="lines", fill="tozeroy", line=dict(color="#6366f1", width=2.5)))
+            fig.update_layout(**plot_layout("Daily Commit Trend"))
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("No timestamp column detected for time-series analysis.")
+            st.info("No timestamp column detected in dataset.")
 
     with col2:
         st.subheader("Role Contribution Share")
         if role_col:
             role_counts = df[role_col].value_counts().reset_index()
             role_counts.columns = ["role", "count"]
-            fig = go.Figure(go.Pie(
-                labels=role_counts["role"], values=role_counts["count"],
-                hole=0.55, marker=dict(colors=PALETTE[:len(role_counts)])
-            ))
-            fig.update_layout(**plot_layout("Role Share Breakdown", showlegend=False))
+            fig = go.Figure(go.Pie(labels=role_counts["role"], values=role_counts["count"], hole=0.55, marker=dict(colors=PALETTE[:len(role_counts)])))
+            fig.update_layout(**plot_layout("Role Breakdown", showlegend=False))
             st.plotly_chart(fig, use_container_width=True)
 
-    st.divider()  # Task 3
-
-    st.header("Comparative Contributor Analysis")
-    st.subheader("Top Contributors vs. PR Throughput")
-    
-    top15 = df.nlargest(15, commit_col) if commit_col else df.head(15)
-    fig_bar = px.bar(top15, x=contributor_col, y=commit_col, color=role_col, color_discrete_sequence=PALETTE)
-    fig_bar.update_layout(**plot_layout("Top Contributor Velocity"))
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-    with st.expander("View Detailed Trend Methodology"):
-        st.write("""
-        Time-series trends aggregate daily commits using 7-day and 30-day rolling moving averages to smooth short-term variance.
-        """)
-
-# Section 3: Data Explorer (Task 1, 2, 3 & Export Integration)
+# Section 3: Data Explorer
 def render_explorer(df):
     st.title("Data Explorer")
-    st.header("Interactive Data Filtering & Export")
-    st.subheader("Filter and Explore Dataset")
+    st.header("Interactive Data Filtering")
+    st.subheader("Search & Filter Active Dataset")
 
-    c1, c2, c3 = st.columns([2, 2, 1])
+    c1, c2 = st.columns(2)
     with c1:
         if "contributor_role" in df.columns:
             roles = ["ALL"] + sorted(df["contributor_role"].dropna().unique().tolist())
-            selected_role = st.selectbox("Filter by Contributor Role", roles)
+            selected_role = st.selectbox("Filter by Role", roles)
         else:
             selected_role = "ALL"
     with c2:
-        search_q = st.text_input("Search (any column)", placeholder="Type keyword...").strip().lower()
-    with c3:
-        commit_col = "commits_count" if "commits_count" in df.columns else ("commits" if "commits" in df.columns else None)
-        min_commits = st.number_input("Min Commits", value=0, step=1) if commit_col else None
+        search_q = st.text_input("Search keyword", placeholder="Search...").strip().lower()
 
     filtered = df.copy()
     if selected_role != "ALL" and "contributor_role" in filtered.columns:
@@ -391,92 +372,30 @@ def render_explorer(df):
     if search_q:
         mask = filtered.astype(str).apply(lambda row: row.str.lower().str.contains(search_q).any(), axis=1)
         filtered = filtered[mask]
-    if min_commits is not None and commit_col in filtered.columns:
-        filtered = filtered[filtered[commit_col] >= min_commits]
-
-    st.divider()
-
-    st.subheader("Filtered Results Summary")
-    f_col1, f_col2, f_col3 = st.columns(3)
-    with f_col1:
-        st.metric("Filtered Records", f"{len(filtered):,}", f"of {len(df):,} total")
-    with f_col2:
-        total_f_commits = filtered[commit_col].sum() if commit_col and len(filtered) else 0
-        st.metric("Filtered Commits", f"{int(total_f_commits):,}")
-    with f_col3:
-        review_col = next((c for c in ["avg_pr_review_days","pr_review_days"] if c in filtered.columns), None)
-        avg_r = f"{filtered[review_col].mean():.1f}d" if review_col and len(filtered) else "N/A"
-        st.metric("Avg PR Review", avg_r)
 
     st.dataframe(filtered, use_container_width=True, height=350)
-
-    st.divider()
-
-    # Progressive disclosure for download (Task 2)
-    with st.expander("Download & Export Options"):
-        st.write("Export your active filtered dataset as a CSV file:")
-        st.download_button(
-            label="📊 Download Filtered CSV",
-            data=filtered.to_csv(index=False).encode("utf-8"),
-            file_name="gitguide_filtered_export.csv",
-            mime="text/csv"
-        )
+    st.download_button("Download CSV", data=filtered.to_csv(index=False).encode("utf-8"), file_name="exported_data.csv", mime="text/csv")
 
 # Section 4: Insights Report
 def render_insights(df):
     st.title("Business Insights Report")
-    st.header("Executive Intelligence Summary")
-    st.subheader("Operational Bottlenecks & Recommendations")
+    st.header("Executive Summary")
+    st.subheader("Automated Dataset Health & Bottleneck Report")
 
     commit_col = next((c for c in ["commits_count","commits"] if c in df.columns), None)
     review_col = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in df.columns), None)
-    role_col   = next((c for c in ["contributor_role","role"] if c in df.columns), None)
 
-    avg_review   = round(df[review_col].mean(), 2) if review_col else None
-    pct_slow     = round((df[review_col] > 5).mean() * 100, 1) if review_col else None
-    pct_single   = round((df[commit_col] == 1).mean() * 100, 1) if commit_col else None
-    health_score = round(100 - (df.isnull().sum().sum() / (len(df) * len(df.columns)) * 100), 1)
+    avg_review = round(df[review_col].mean(), 2) if review_col else None
+    pct_single = round((df[commit_col] == 1).mean() * 100, 1) if commit_col else None
+    null_rate  = round(df.isnull().sum().sum() / (len(df) * len(df.columns)) * 100, 2)
 
     ci1, ci2, ci3 = st.columns(3)
     with ci1:
-        st.metric("Avg PR Review", f"{avg_review:.1f}d" if avg_review is not None else "N/A", "Target < 3d")
+        st.metric("Avg Review Days", f"{avg_review:.1f}d" if avg_review is not None else "N/A")
     with ci2:
-        st.metric("PRs > 5 Days", f"{pct_slow:.1f}%" if pct_slow is not None else "N/A", "Bottleneck")
+        st.metric("Single-Commit %", f"{pct_single:.1f}%" if pct_single is not None else "N/A")
     with ci3:
-        st.metric("Data Health Score", f"{health_score}%", "Verified")
-
-    st.divider()
-
-    left, right = st.columns([1, 1.6])
-    with left:
-        st.subheader("Key Operational Findings")
-        avg_str    = f"{avg_review:.1f} days" if avg_review is not None else "N/A"
-        slow_str   = f"{pct_slow:.0f}%" if pct_slow is not None else "N/A"
-        single_str = f"{pct_single:.0f}%" if pct_single is not None else "N/A"
-
-        st.markdown(f"""
-        <div class="insight-card blue">
-            <div class="insight-label" style="color:#60a5fa">PR Review Velocity</div>
-            <div class="insight-text">Average PR review turnaround is <b>{avg_str}</b>. <b>{slow_str}</b> of PRs exceed 5 days.</div>
-        </div>
-        <div class="insight-card amber">
-            <div class="insight-label" style="color:#fbbf24">Onboarding Friction Alert</div>
-            <div class="insight-text"><b>{single_str}</b> of contributors submitted only 1 commit before abandoning.</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with right:
-        st.subheader("Commit Distribution by Role")
-        if commit_col and role_col:
-            df_role = df.groupby(role_col)[commit_col].sum().reset_index()
-            fig = px.bar(df_role, x=role_col, y=commit_col, color=role_col, color_discrete_sequence=PALETTE)
-            fig.update_layout(**plot_layout("Commits by Role"))
-            st.plotly_chart(fig, use_container_width=True)
-
-    with st.expander("View Statistical Assumptions & Methodology"):
-        st.write("""
-        Insights use logistic regression models and correlation analysis ($r = -0.65$) to quantify contributor churn drivers.
-        """)
+        st.metric("Null Rate", f"{null_rate}%")
 
 # Main Controller
 def main():
