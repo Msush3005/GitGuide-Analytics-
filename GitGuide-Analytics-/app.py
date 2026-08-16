@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-GitGuide Analytics - Interactive Multi-Step Dashboard
-Streamlit Session State & Workflow Persistence (Lesson 2.54)
+GitGuide Analytics - Real-Time KPI Dashboard
+Lesson 2.55: Real-Time KPI Dashboard Development
 
-Demonstrates st.session_state initialization, multi-step workflow memory,
-descriptive key naming, inline documentation, and clean state reset mechanisms.
+Features:
+- @st.cache_data cached dataset loading
+- 5 reactive KPI metrics computed dynamically from filtered_df
+- 3 interactive chart types (Line trend, Bar comparison, Plotly Histogram distribution)
+- Graceful empty filter handling with st.warning and st.stop()
+- Dynamic schema discovery supporting any uploaded CSV/JSON dataset
 
 Usage:
     streamlit run app.py
@@ -12,6 +16,7 @@ Usage:
 
 import os
 import sys
+import io
 import asyncio
 from datetime import datetime, date
 import pandas as pd
@@ -36,32 +41,21 @@ if SCRIPTS_DIR not in sys.path:
 
 # Page config
 st.set_page_config(
-    page_title="GitGuide Analytics - Session State & Workflow Persistence",
+    page_title="GitGuide Real-Time KPI Dashboard",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Task 1, 2 & 5: Initialise Session State with Descriptive Keys and Safe Initialization
-# Inline comments explain the purpose of each key (Task 5)
-
-# "selected_segment" - stores the user's segment/role choice from Step 1 so it survives reruns when unrelated widgets change.
+# Initialise Session State (Lesson 2.54)
 if "selected_segment" not in st.session_state:
     st.session_state["selected_segment"] = "All"
-
-# "workflow_step" - tracks which step the user has completed in the multi-step analytics workflow (Step 1 -> Step 2).
 if "workflow_step" not in st.session_state:
     st.session_state["workflow_step"] = 1
-
-# "analysis_result" - caches computed metrics/results from Step 2 so they do not recompute when unrelated widgets are adjusted.
 if "analysis_result" not in st.session_state:
     st.session_state["analysis_result"] = None
-
-# "computed_revenue" - stores total calculated contributions/revenue for the selected segment.
 if "computed_revenue" not in st.session_state:
     st.session_state["computed_revenue"] = 0.0
-
-# "filter_date_start" - stores active start date filter across page navigation and widget interactions.
 if "filter_date_start" not in st.session_state:
     st.session_state["filter_date_start"] = None
 
@@ -103,21 +97,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .card-icon  { font-size: 1.5rem; margin-bottom: 8px; display: block; }
 .card-label { color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .card-value { color: #f1f5f9; font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
-.card-delta { font-size: 0.78rem; font-weight: 500; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-top: 6px; }
-.delta-positive { background: rgba(16,185,129,0.15); color: #10b981; }
-.delta-negative { background: rgba(239,68,68,0.15);  color: #ef4444; }
-.delta-neutral  { background: rgba(99,102,241,0.15); color: #818cf8; }
-.insight-card {
-    background: rgba(255,255,255,0.03);
-    border-left: 3px solid;
-    border-radius: 0 12px 12px 0;
-    padding: 18px 20px;
-    margin-bottom: 12px;
-}
-.insight-card.blue   { border-color: #3b82f6; }
-.insight-card.purple { border-color: #8b5cf6; }
-.insight-card.green  { border-color: #10b981; }
-.insight-card.amber  { border-color: #f59e0b; }
 .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 4px 0 12px 0; }
 .sidebar-logo-text {
     font-size: 1.15rem; font-weight: 800;
@@ -137,12 +116,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: white !important; border: none !important;
     border-radius: 8px !important; font-weight: 600 !important;
     font-size: 0.85rem !important; width: 100%;
-}
-.stSelectbox > div > div,
-.stTextInput > div > div > input {
-    background: rgba(255,255,255,0.04) !important;
-    border: 1px solid rgba(99,102,241,0.3) !important;
-    border-radius: 8px !important; color: #e2e8f0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -168,8 +141,26 @@ def plot_layout(title="", **overrides):
 PLOTLY_LAYOUT = _PLOTLY_BASE
 PALETTE = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#ec4899"]
 
+# Task 3: Applied @st.cache_data to Data Loading
+@st.cache_data
+def parse_uploaded_bytes(file_bytes, file_name):
+    """
+    Cached file loader: converts raw file bytes into Pandas DataFrame.
+    Streamlit caches the output keyed by file content hash for fast reruns.
+    """
+    buffer = io.BytesIO(file_bytes)
+    if file_name.endswith(".csv"):
+        return pd.read_csv(buffer)
+    elif file_name.endswith(".json"):
+        return pd.read_json(buffer)
+    else:
+        raise ValueError("Unsupported file format")
+
 @st.cache_data
 def load_default_dataset():
+    """
+    Cached default dataset loader to ensure instant startup.
+    """
     processed_path = os.path.join(BASE_DIR, "output", "processed.csv")
     raw_path       = os.path.join(BASE_DIR, "data", "raw", "sample.csv")
     if os.path.exists(processed_path):
@@ -177,44 +168,39 @@ def load_default_dataset():
     if os.path.exists(raw_path):
         return pd.read_csv(raw_path)
     np.random.seed(42)
-    n = 20
-    roles = ["Maintainer"] * 3 + ["Reviewer"] * 5 + ["Contributor"] * 12
+    n = 25
+    roles = ["Maintainer"] * 4 + ["Reviewer"] * 6 + ["Contributor"] * 15
     np.random.shuffle(roles)
-    dates = pd.date_range("2026-01-01", periods=n, freq="3D")
+    dates = pd.date_range("2026-01-01", periods=n, freq="2D")
     return pd.DataFrame({
         "contributor_id": range(101, 101 + n),
         "contributor_login": [f"user_{i:03d}" for i in range(101, 101 + n)],
         "repository_name": ["GitGuide-Analytics-"] * n,
-        "commits_count": np.random.randint(1, 35, n),
-        "pull_requests_opened": np.random.randint(0, 12, n),
-        "total_contributions": np.random.randint(1, 45, n),
-        "lines_changed": np.random.randint(15, 1200, n),
+        "commits_count": np.random.randint(1, 45, n),
+        "pull_requests_opened": np.random.randint(0, 15, n),
+        "total_contributions": np.random.randint(1, 60, n),
+        "lines_changed": np.random.randint(20, 1500, n),
         "contributor_role": roles,
-        "pr_review_days": np.round(np.random.uniform(0.5, 8.0, n), 2),
+        "pr_review_days": np.round(np.random.uniform(0.4, 7.5, n), 2),
         "timestamp": dates.strftime("%Y-%m-%d"),
     })
 
 def handle_file_upload(uploaded_file):
     if uploaded_file is not None:
         try:
-            if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
-            elif uploaded_file.name.endswith(".json"):
-                df = pd.read_json(uploaded_file)
-            else:
-                st.error("Unsupported file type. Please upload CSV or JSON.")
-                st.stop()
+            file_bytes = uploaded_file.getvalue()
+            df = parse_uploaded_bytes(file_bytes, uploaded_file.name)
             if len(df) == 0:
-                st.warning("Uploaded file is empty.")
+                st.warning("Uploaded file is empty. Please check your data.")
                 st.stop()
-            st.success(f"Loaded: {uploaded_file.name} ({len(df):,} rows)")
+            st.success(f"Cached & Loaded: {uploaded_file.name} ({len(df):,} rows)")
             return df
         except Exception as e:
-            st.error(f"Could not read file. ({e})")
+            st.error(f"Could not read file format. ({e})")
             st.stop()
     return None
 
-# Sidebar Navigation & Session State Reset Engine (Task 4)
+# Sidebar Navigation & Filter Engine
 def render_sidebar():
     st.sidebar.markdown("""
     <div class="sidebar-logo">
@@ -226,7 +212,7 @@ def render_sidebar():
     
     page = st.sidebar.radio(
         "Select Section",
-        ["Overview", "Guided Workflow", "Trends", "Data Explorer", "Insights"],
+        ["Real-Time Dashboard", "Guided Workflow", "Trends & Distributions", "Data Explorer"],
         label_visibility="collapsed"
     )
 
@@ -252,195 +238,161 @@ def render_sidebar():
 
     filtered_df = df.copy()
 
-    # Date range filter
+    # Dynamic Column Discovery (Task 5: Generic End-to-End Execution)
     time_col = next((c for c in ["timestamp", "date", "created_at"] if c in df.columns), None)
     if time_col:
         try:
             df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
-            min_date = df[time_col].min().date()
-            max_date = df[time_col].max().date()
-            date_range = st.sidebar.date_input("Date Range", value=(min_date, max_date))
+            min_d = df[time_col].min().date()
+            max_d = df[time_col].max().date()
+            date_range = st.sidebar.date_input("Date Range", value=(min_d, max_d))
             if isinstance(date_range, tuple) and len(date_range) == 2:
-                start_d, end_d = date_range
-                st.session_state["filter_date_start"] = str(start_d)
+                s_date, e_date = date_range
                 filtered_df = filtered_df[
-                    (pd.to_datetime(filtered_df[time_col]).dt.date >= start_d) &
-                    (pd.to_datetime(filtered_df[time_col]).dt.date <= end_d)
+                    (pd.to_datetime(filtered_df[time_col]).dt.date >= s_date) &
+                    (pd.to_datetime(filtered_df[time_col]).dt.date <= e_date)
                 ]
         except Exception:
             pass
 
-    # Multi-select role filter
-    role_col = next((c for c in ["contributor_role", "role", "segment"] if c in df.columns), None)
+    role_col = next((c for c in ["contributor_role", "role", "segment", "category"] if c in df.columns), None)
     if role_col:
-        all_roles = sorted(df[role_col].dropna().unique().tolist())
-        selected_roles = st.sidebar.multiselect("Contributor Roles", options=all_roles, default=all_roles)
-        filtered_df = filtered_df[filtered_df[role_col].isin(selected_roles)]
+        all_opts = sorted(df[role_col].dropna().unique().tolist())
+        selected_opts = st.sidebar.multiselect("Category / Role Filter", options=all_opts, default=all_opts)
+        filtered_df = filtered_df[filtered_df[role_col].isin(selected_opts)]
 
-    # Task 4: Reset Workflow & Session State Button
+    commit_col = next((c for c in ["commits_count", "commits", "revenue", "total_contributions"] if c in df.columns), None)
+    if commit_col and pd.api.types.is_numeric_dtype(df[commit_col]):
+        min_v = int(df[commit_col].min())
+        max_v = int(df[commit_col].max())
+        if min_v < max_v:
+            min_sel, max_sel = st.sidebar.slider("Numeric Range Threshold", min_value=min_v, max_value=max_v, value=(min_v, max_v))
+            filtered_df = filtered_df[(filtered_df[commit_col] >= min_sel) & (filtered_df[commit_col] <= max_sel)]
+
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-    if st.sidebar.button("Reset Workflow & State"):
-        for key in ["selected_segment", "workflow_step", "analysis_result", "computed_revenue", "filter_date_start"]:
+    if st.sidebar.button("Reset All Filters"):
+        for key in ["selected_segment", "workflow_step", "analysis_result", "computed_revenue"]:
             if key in st.session_state:
                 del st.session_state[key]
         st.rerun()
 
+    # Task 4: Empty Filtered Results Handling
     if len(filtered_df) == 0:
-        st.warning("No data matches the current filter selection. Try broadening your criteria or clicking 'Reset Workflow & State'.")
+        st.warning("No data matches current filters. Broaden your selection.")
         st.stop()
 
     st.sidebar.markdown(f"<div style='color:#475569;font-size:0.72rem;'><b style='color:#818cf8'>Filtered Scope</b>: {len(filtered_df):,} of {len(df):,} rows</div>", unsafe_allow_html=True)
-    st.sidebar.markdown(f"<div style='color:#64748b;font-size:0.7rem;'>Active Workflow Step: <b>Step {st.session_state['workflow_step']}</b></div>", unsafe_allow_html=True)
 
     return page, filtered_df, df
 
-# Task 3: Multi-Step Guided Workflow Engine using st.session_state
+# Task 1 & Task 2: Real-Time KPI Dashboard Page
+def render_realtime_kpi_dashboard(filtered_df, full_df):
+    st.title("Real-Time Operational KPI Dashboard")
+    st.header("Live Business & Contributor Intelligence")
+    st.markdown("Metrics and charts update dynamically as filters or datasets change.")
+
+    # Dynamic Column Resolution for Generic Datasets (Task 5)
+    num_cols = filtered_df.select_dtypes(include="number").columns.tolist()
+    primary_num = next((c for c in ["commits_count", "revenue", "total_contributions", "lines_changed"] if c in filtered_df.columns), num_cols[0] if num_cols else None)
+    entity_col  = next((c for c in ["contributor_login", "customer_id", "user_id", "contributor_id"] if c in filtered_df.columns), filtered_df.columns[0])
+    review_col  = next((c for c in ["avg_pr_review_days", "pr_review_days", "review_days"] if c in filtered_df.columns), None)
+
+    # Task 1: Five Reactive KPI Metrics computed from filtered_df
+    total_val = filtered_df[primary_num].sum() if primary_num else 0
+    avg_val   = filtered_df[primary_num].mean() if primary_num else 0
+    row_count = len(filtered_df)
+    unique_entities = filtered_df[entity_col].nunique() if entity_col else 0
+    
+    total_cells = filtered_df.shape[0] * filtered_df.shape[1] if len(filtered_df) > 0 else 1
+    null_pct    = (filtered_df.isnull().sum().sum() / total_cells) * 100
+    quality_score = 100.0 - null_pct
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        st.metric("Total Volume", f"{int(total_val):,}" if primary_num else "N/A")
+    with c2:
+        st.metric("Avg per Unit", f"{avg_val:.1f}" if primary_num else "N/A")
+    with c3:
+        st.metric("Active Records", f"{row_count:,}")
+    with c4:
+        st.metric("Unique Entities", f"{unique_entities:,}")
+    with c5:
+        st.metric("Data Quality", f"{quality_score:.1f}%")
+
+    st.divider()
+
+    # Task 2: Three Different Chart Types Wired to filtered_df
+    st.header("Visual Analytics & Distributions")
+
+    time_col = next((c for c in ["timestamp", "date", "created_at"] if c in filtered_df.columns), None)
+    role_col = next((c for c in ["contributor_role", "role", "segment", "category"] if c in filtered_df.columns), None)
+
+    col_left, col_right = st.columns(2)
+
+    with col_left:
+        # Chart 1: Line Chart (Trend Over Time)
+        st.subheader("Chart 1: Activity Trend Over Time (Line Chart)")
+        if time_col and primary_num:
+            df_t = filtered_df.copy()
+            df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
+            df_g = df_t.groupby(df_t[time_col].dt.date)[primary_num].sum().reset_index()
+            df_g.columns = ["Date", "Volume"]
+            st.line_chart(df_g.set_index("Date"))
+        else:
+            st.info("No date column detected for line trend.")
+
+    with col_right:
+        # Chart 2: Bar Chart (Category Comparison)
+        st.subheader("Chart 2: Comparison by Category (Bar Chart)")
+        if role_col and primary_num:
+            df_cat = filtered_df.groupby(role_col)[primary_num].sum().reset_index()
+            df_cat.columns = ["Category", "Volume"]
+            st.bar_chart(df_cat.set_index("Category"))
+        else:
+            st.info("No category column detected for bar comparison.")
+
+    st.divider()
+
+    # Chart 3: Plotly Histogram (Distribution)
+    st.subheader("Chart 3: Metric Value Distribution (Plotly Histogram)")
+    if primary_num:
+        fig_hist = px.histogram(
+            filtered_df, x=primary_num, nbins=30,
+            color_discrete_sequence=["#8b5cf6"],
+            title=f"Distribution Frequency for '{primary_num}'"
+        )
+        fig_hist.update_layout(**plot_layout(f"Distribution Frequency for '{primary_num}'"))
+        st.plotly_chart(fig_hist, use_container_width=True)
+    else:
+        st.info("No numerical column available for distribution histogram.")
+
+# Guided Workflow Page
 def render_guided_workflow(df):
     st.title("Multi-Step Guided Workflow")
-    st.header("Analytical Continuity Engine")
-    st.markdown("Demonstrates how `st.session_state` carries context forward across widget interactions.")
-    
-    st.divider()
+    st.write(f"Active Session Step: Step {st.session_state['workflow_step']}")
 
-    # Step 1: Select Segment / Contributor Role
-    st.header("Step 1: Select Segment or Role")
-    role_col = next((c for c in ["contributor_role", "role", "segment"] if c in df.columns), None)
-    
-    if role_col:
-        options = ["All"] + sorted(df[role_col].dropna().unique().tolist())
-    else:
-        options = ["All", "Enterprise", "Mid-Market", "SMB"]
+# Trends & Distributions Page
+def render_trends_page(filtered_df):
+    st.title("Trends & Detailed Distributions")
+    st.dataframe(filtered_df.head(20), use_container_width=True)
 
-    # Read session state to set widget index (keeps widget in sync)
-    current_selected = st.session_state["selected_segment"]
-    default_idx = options.index(current_selected) if current_selected in options else 0
-
-    segment_choice = st.selectbox(
-        "Choose a segment/role for deep-dive analysis",
-        options=options,
-        index=default_idx
-    )
-
-    if st.button("Confirm Segment Selection"):
-        st.session_state["selected_segment"] = segment_choice
-        st.session_state["workflow_step"] = 2
-        st.success(f"Segment confirmed: {segment_choice}. Proceeding to Step 2...")
-
-    st.divider()
-
-    # Step 2: Show Analysis (Only if Step 1 is confirmed and completed)
-    if st.session_state["workflow_step"] >= 2:
-        st.header("Step 2: Segment Velocity & Contribution Analysis")
-        chosen_seg = st.session_state["selected_segment"]
-        st.info(f"Analysing Segment Context: **{chosen_seg}** (Persisted across reruns via `st.session_state`) ")
-
-        if chosen_seg == "All" or role_col not in df.columns:
-            analysis_df = df
-        else:
-            analysis_df = df[df[role_col] == chosen_seg]
-
-        commit_col = next((c for c in ["commits_count", "commits", "total_contributions"] if c in analysis_df.columns), None)
-        
-        if commit_col and len(analysis_df):
-            total_rev = int(analysis_df[commit_col].sum())
-            st.session_state["computed_revenue"] = float(total_rev)
-            st.session_state["analysis_result"] = f"Total commits for {chosen_seg}: {total_rev:,}"
-
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Total Commits", f"{total_rev:,}")
-            with col2:
-                st.metric("Contributors Count", f"{len(analysis_df):,}")
-            with col3:
-                avg_c = total_rev / len(analysis_df) if len(analysis_df) else 0
-                st.metric("Avg Commits / Contributor", f"{avg_c:.1f}")
-
-            st.subheader(f"Data Preview for {chosen_seg}")
-            st.dataframe(analysis_df, use_container_width=True, height=250)
-        else:
-            st.warning(f"No records found for segment: {chosen_seg}")
-    else:
-        st.warning("Step 2 is locked. Please confirm your segment selection in Step 1 above to unlock Step 2.")
-
-# Section: Overview
-def render_overview(filtered_df, full_df):
-    st.title("Business Overview & Overview Metrics")
-    
-    st.header("Key Performance Indicators")
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    commit_col      = next((c for c in ["commits_count","commits","total_contributions"] if c in filtered_df.columns), filtered_df.select_dtypes(include=np.number).columns[0] if len(filtered_df.select_dtypes(include=np.number).columns) else None)
-    contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in filtered_df.columns), filtered_df.columns[0])
-    review_col      = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in filtered_df.columns), None)
-
-    total_commits   = int(filtered_df[commit_col].sum()) if commit_col else "N/A"
-    unique_contribs = filtered_df[contributor_col].nunique()
-    avg_review      = f"{filtered_df[review_col].mean():.1f}d" if review_col else "N/A"
-    single_ratio    = f"{(filtered_df[commit_col] == 1).mean() * 100:.1f}%" if commit_col else "N/A"
-    lines_sum       = f"{filtered_df['avg_lines_changed'].sum():,}" if 'avg_lines_changed' in filtered_df.columns else "N/A"
-
-    with col1:
-        st.metric("Contributors", f"{unique_contribs:,}")
-    with col2:
-        st.metric("Total Commits", f"{total_commits:,}" if isinstance(total_commits, int) else total_commits)
-    with col3:
-        st.metric("Avg PR Review", avg_review)
-    with col4:
-        st.metric("Single-Commit %", single_ratio)
-    with col5:
-        st.metric("Lines Changed", lines_sum)
-
-    st.divider()
-
-    st.subheader("Session State Inspection & Persistence Audit")
-    state_table = pd.DataFrame({
-        "Session State Key": list(st.session_state.keys()),
-        "Stored Value": [str(v) for v in st.session_state.values()]
-    })
-    st.dataframe(state_table, use_container_width=True)
-
-# Section: Trends
-def render_trends(filtered_df):
-    st.title("Trend Analysis")
-    st.header("Activity Trends")
-
-    commit_col = next((c for c in ["commits_count","commits","total_contributions"] if c in filtered_df.columns), filtered_df.select_dtypes(include=np.number).columns[0] if len(filtered_df.select_dtypes(include=np.number).columns) else None)
-    time_col   = next((c for c in ["timestamp","date","created_at"] if c in filtered_df.columns), None)
-
-    if time_col and commit_col:
-        df_t = filtered_df.copy()
-        df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
-        df_g = df_t.groupby(df_t[time_col].dt.date)[commit_col].sum().reset_index()
-        df_g.columns = ["date", "commits"]
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df_g["date"], y=df_g["commits"], mode="lines", fill="tozeroy", line=dict(color="#6366f1", width=2.5)))
-        fig.update_layout(**plot_layout("Filtered Daily Commit Trend"))
-        st.plotly_chart(fig, use_container_width=True)
-
-# Section: Data Explorer
+# Data Explorer Page
 def render_explorer(filtered_df):
     st.title("Data Explorer")
     st.dataframe(filtered_df, use_container_width=True, height=350)
-    st.download_button("Download Filtered CSV", data=filtered_df.to_csv(index=False).encode("utf-8"), file_name="filtered_data.csv", mime="text/csv")
-
-# Section: Insights Report
-def render_insights(filtered_df):
-    st.title("Business Insights Report")
-    st.write(f"Active Workflow Context: Step {st.session_state['workflow_step']} | Selected Segment: {st.session_state['selected_segment']}")
+    st.download_button("Export CSV", data=filtered_df.to_csv(index=False).encode("utf-8"), file_name="filtered_export.csv", mime="text/csv")
 
 # Main Controller
 def main():
     page, filtered_df, full_df = render_sidebar()
-    if page == "Overview":
-        render_overview(filtered_df, full_df)
+    if page == "Real-Time Dashboard":
+        render_realtime_kpi_dashboard(filtered_df, full_df)
     elif page == "Guided Workflow":
         render_guided_workflow(full_df)
-    elif page == "Trends":
-        render_trends(filtered_df)
+    elif page == "Trends & Distributions":
+        render_trends_page(filtered_df)
     elif page == "Data Explorer":
         render_explorer(filtered_df)
-    elif page == "Insights":
-        render_insights(filtered_df)
 
 if __name__ == "__main__":
     main()
