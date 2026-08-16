@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-GitGuide Analytics - Streamlit Interactive Dashboard
-Filters & Interactive Widgets (Lesson 2.53)
+GitGuide Analytics - Interactive Multi-Step Dashboard
+Streamlit Session State & Workflow Persistence (Lesson 2.54)
 
-Wires date pickers, multi-select dropdowns, range sliders, and radio buttons
-to filter DataFrames dynamically with meaningful defaults, empty state warnings,
-and a 1-click Reset Filters button.
+Demonstrates st.session_state initialization, multi-step workflow memory,
+descriptive key naming, inline documentation, and clean state reset mechanisms.
 
 Usage:
     streamlit run app.py
@@ -37,11 +36,34 @@ if SCRIPTS_DIR not in sys.path:
 
 # Page config
 st.set_page_config(
-    page_title="GitGuide Analytics - Interactive Dashboard",
+    page_title="GitGuide Analytics - Session State & Workflow Persistence",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Task 1, 2 & 5: Initialise Session State with Descriptive Keys and Safe Initialization
+# Inline comments explain the purpose of each key (Task 5)
+
+# "selected_segment" - stores the user's segment/role choice from Step 1 so it survives reruns when unrelated widgets change.
+if "selected_segment" not in st.session_state:
+    st.session_state["selected_segment"] = "All"
+
+# "workflow_step" - tracks which step the user has completed in the multi-step analytics workflow (Step 1 -> Step 2).
+if "workflow_step" not in st.session_state:
+    st.session_state["workflow_step"] = 1
+
+# "analysis_result" - caches computed metrics/results from Step 2 so they do not recompute when unrelated widgets are adjusted.
+if "analysis_result" not in st.session_state:
+    st.session_state["analysis_result"] = None
+
+# "computed_revenue" - stores total calculated contributions/revenue for the selected segment.
+if "computed_revenue" not in st.session_state:
+    st.session_state["computed_revenue"] = 0.0
+
+# "filter_date_start" - stores active start date filter across page navigation and widget interactions.
+if "filter_date_start" not in st.session_state:
+    st.session_state["filter_date_start"] = None
 
 # Global CSS - dark glassmorphism design system
 st.markdown("""
@@ -96,9 +118,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .insight-card.purple { border-color: #8b5cf6; }
 .insight-card.green  { border-color: #10b981; }
 .insight-card.amber  { border-color: #f59e0b; }
-.insight-card.red    { border-color: #ef4444; }
-.insight-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px; }
-.insight-text  { color: #cbd5e1; font-size: 0.88rem; line-height: 1.6; }
 .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 4px 0 12px 0; }
 .sidebar-logo-text {
     font-size: 1.15rem; font-weight: 800;
@@ -183,21 +202,19 @@ def handle_file_upload(uploaded_file):
             elif uploaded_file.name.endswith(".json"):
                 df = pd.read_json(uploaded_file)
             else:
-                st.error("Unsupported file type. Please upload a CSV or JSON file.")
+                st.error("Unsupported file type. Please upload CSV or JSON.")
                 st.stop()
-
             if len(df) == 0:
-                st.warning("The uploaded file is empty. Please check your dataset.")
+                st.warning("Uploaded file is empty.")
                 st.stop()
-
-            st.success(f"Loaded: {uploaded_file.name} ({len(df):,} rows, {len(df.columns)} columns)")
+            st.success(f"Loaded: {uploaded_file.name} ({len(df):,} rows)")
             return df
         except Exception as e:
-            st.error(f"Could not read this file. ({e})")
+            st.error(f"Could not read file. ({e})")
             st.stop()
     return None
 
-# Task 1, 2, 3, 4 & 5: Sidebar Navigation & Filter Wiring Engine
+# Sidebar Navigation & Session State Reset Engine (Task 4)
 def render_sidebar():
     st.sidebar.markdown("""
     <div class="sidebar-logo">
@@ -207,15 +224,14 @@ def render_sidebar():
     """, unsafe_allow_html=True)
     st.sidebar.title("Navigation")
     
-    # Widget 1: Navigation Radio (Radio Button)
     page = st.sidebar.radio(
         "Select Section",
-        ["Overview", "Trends", "Data Explorer", "Insights"],
+        ["Overview", "Guided Workflow", "Trends", "Data Explorer", "Insights"],
         label_visibility="collapsed"
     )
 
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
-    st.sidebar.header("Dataset Upload & Source")
+    st.sidebar.header("Dataset Upload")
 
     uploaded_file = st.sidebar.file_uploader("Upload dataset (CSV/JSON)", type=["csv", "json"])
     df = handle_file_upload(uploaded_file)
@@ -234,22 +250,19 @@ def render_sidebar():
     st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
     st.sidebar.header("Interactive Filters")
 
-    # Filter Chain Implementation (Task 1 & Task 3: Meaningful Defaults)
     filtered_df = df.copy()
 
-    # Widget 2: Date Range Picker (Task 1)
+    # Date range filter
     time_col = next((c for c in ["timestamp", "date", "created_at"] if c in df.columns), None)
     if time_col:
         try:
             df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
             min_date = df[time_col].min().date()
             max_date = df[time_col].max().date()
-            
-            # Meaningful Default: Full date range
             date_range = st.sidebar.date_input("Date Range", value=(min_date, max_date))
-            
             if isinstance(date_range, tuple) and len(date_range) == 2:
                 start_d, end_d = date_range
+                st.session_state["filter_date_start"] = str(start_d)
                 filtered_df = filtered_df[
                     (pd.to_datetime(filtered_df[time_col]).dt.date >= start_d) &
                     (pd.to_datetime(filtered_df[time_col]).dt.date <= end_d)
@@ -257,40 +270,101 @@ def render_sidebar():
         except Exception:
             pass
 
-    # Widget 3: Multi-Select Categorical Filter (Task 1 & Task 3)
+    # Multi-select role filter
     role_col = next((c for c in ["contributor_role", "role", "segment"] if c in df.columns), None)
     if role_col:
         all_roles = sorted(df[role_col].dropna().unique().tolist())
-        # Meaningful Default: All options selected
         selected_roles = st.sidebar.multiselect("Contributor Roles", options=all_roles, default=all_roles)
         filtered_df = filtered_df[filtered_df[role_col].isin(selected_roles)]
 
-    # Widget 4: Range Slider for Numeric Threshold (Task 1 & Task 3)
-    commit_col = next((c for c in ["commits_count", "commits", "total_contributions", "revenue"] if c in df.columns), None)
-    if commit_col and pd.api.types.is_numeric_dtype(df[commit_col]):
-        min_c = int(df[commit_col].min())
-        max_c = int(df[commit_col].max())
-        if min_c < max_c:
-            # Meaningful Default: Full numeric range
-            min_val, max_val = st.sidebar.slider("Commits Threshold Range", min_value=min_c, max_value=max_c, value=(min_c, max_c))
-            filtered_df = filtered_df[(filtered_df[commit_col] >= min_val) & (filtered_df[commit_col] <= max_val)]
-
-    # Task 5: Reset Filters Button
-    if st.sidebar.button("Reset Filters"):
+    # Task 4: Reset Workflow & Session State Button
+    st.sidebar.markdown("<hr style='border:none;height:1px;background:rgba(99,102,241,0.2);margin:14px 0'>", unsafe_allow_html=True)
+    if st.sidebar.button("Reset Workflow & State"):
+        for key in ["selected_segment", "workflow_step", "analysis_result", "computed_revenue", "filter_date_start"]:
+            if key in st.session_state:
+                del st.session_state[key]
         st.rerun()
 
-    # Task 4: Empty Filter Combinations Handling
     if len(filtered_df) == 0:
-        st.warning("No data matches the current filter selection. Try broadening your criteria or clicking 'Reset Filters'.")
+        st.warning("No data matches the current filter selection. Try broadening your criteria or clicking 'Reset Workflow & State'.")
         st.stop()
 
     st.sidebar.markdown(f"<div style='color:#475569;font-size:0.72rem;'><b style='color:#818cf8'>Filtered Scope</b>: {len(filtered_df):,} of {len(df):,} rows</div>", unsafe_allow_html=True)
-    
+    st.sidebar.markdown(f"<div style='color:#64748b;font-size:0.7rem;'>Active Workflow Step: <b>Step {st.session_state['workflow_step']}</b></div>", unsafe_allow_html=True)
+
     return page, filtered_df, df
 
-# Section 1: Overview
+# Task 3: Multi-Step Guided Workflow Engine using st.session_state
+def render_guided_workflow(df):
+    st.title("Multi-Step Guided Workflow")
+    st.header("Analytical Continuity Engine")
+    st.markdown("Demonstrates how `st.session_state` carries context forward across widget interactions.")
+    
+    st.divider()
+
+    # Step 1: Select Segment / Contributor Role
+    st.header("Step 1: Select Segment or Role")
+    role_col = next((c for c in ["contributor_role", "role", "segment"] if c in df.columns), None)
+    
+    if role_col:
+        options = ["All"] + sorted(df[role_col].dropna().unique().tolist())
+    else:
+        options = ["All", "Enterprise", "Mid-Market", "SMB"]
+
+    # Read session state to set widget index (keeps widget in sync)
+    current_selected = st.session_state["selected_segment"]
+    default_idx = options.index(current_selected) if current_selected in options else 0
+
+    segment_choice = st.selectbox(
+        "Choose a segment/role for deep-dive analysis",
+        options=options,
+        index=default_idx
+    )
+
+    if st.button("Confirm Segment Selection"):
+        st.session_state["selected_segment"] = segment_choice
+        st.session_state["workflow_step"] = 2
+        st.success(f"Segment confirmed: {segment_choice}. Proceeding to Step 2...")
+
+    st.divider()
+
+    # Step 2: Show Analysis (Only if Step 1 is confirmed and completed)
+    if st.session_state["workflow_step"] >= 2:
+        st.header("Step 2: Segment Velocity & Contribution Analysis")
+        chosen_seg = st.session_state["selected_segment"]
+        st.info(f"Analysing Segment Context: **{chosen_seg}** (Persisted across reruns via `st.session_state`) ")
+
+        if chosen_seg == "All" or role_col not in df.columns:
+            analysis_df = df
+        else:
+            analysis_df = df[df[role_col] == chosen_seg]
+
+        commit_col = next((c for c in ["commits_count", "commits", "total_contributions"] if c in analysis_df.columns), None)
+        
+        if commit_col and len(analysis_df):
+            total_rev = int(analysis_df[commit_col].sum())
+            st.session_state["computed_revenue"] = float(total_rev)
+            st.session_state["analysis_result"] = f"Total commits for {chosen_seg}: {total_rev:,}"
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Commits", f"{total_rev:,}")
+            with col2:
+                st.metric("Contributors Count", f"{len(analysis_df):,}")
+            with col3:
+                avg_c = total_rev / len(analysis_df) if len(analysis_df) else 0
+                st.metric("Avg Commits / Contributor", f"{avg_c:.1f}")
+
+            st.subheader(f"Data Preview for {chosen_seg}")
+            st.dataframe(analysis_df, use_container_width=True, height=250)
+        else:
+            st.warning(f"No records found for segment: {chosen_seg}")
+    else:
+        st.warning("Step 2 is locked. Please confirm your segment selection in Step 1 above to unlock Step 2.")
+
+# Section: Overview
 def render_overview(filtered_df, full_df):
-    st.title("Business Overview & Dataset Preview")
+    st.title("Business Overview & Overview Metrics")
     
     st.header("Key Performance Indicators")
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -306,7 +380,7 @@ def render_overview(filtered_df, full_df):
     lines_sum       = f"{filtered_df['avg_lines_changed'].sum():,}" if 'avg_lines_changed' in filtered_df.columns else "N/A"
 
     with col1:
-        st.metric("Contributors", f"{unique_contribs:,}", f"of {full_df[contributor_col].nunique():,} total")
+        st.metric("Contributors", f"{unique_contribs:,}")
     with col2:
         st.metric("Total Commits", f"{total_commits:,}" if isinstance(total_commits, int) else total_commits)
     with col3:
@@ -318,110 +392,49 @@ def render_overview(filtered_df, full_df):
 
     st.divider()
 
-    st.header("Dataset Overview & Filtered Preview")
-    col_l, col_r = st.columns([3, 2])
-    with col_l:
-        st.subheader(f"Filtered Data (Showing Top {min(10, len(filtered_df))} Rows)")
-        st.dataframe(filtered_df.head(10), use_container_width=True, height=300)
-    with col_r:
-        st.subheader("Schema Integrity Audit")
-        schema = pd.DataFrame({
-            "Type": filtered_df.dtypes.astype(str),
-            "Non-Null": filtered_df.notnull().sum(),
-            "Nulls": filtered_df.isnull().sum(),
-            "Fill %": (filtered_df.notnull().sum() / len(filtered_df) * 100).round(1).astype(str) + "%",
-        })
-        st.dataframe(schema, use_container_width=True, height=300)
+    st.subheader("Session State Inspection & Persistence Audit")
+    state_table = pd.DataFrame({
+        "Session State Key": list(st.session_state.keys()),
+        "Stored Value": [str(v) for v in st.session_state.values()]
+    })
+    st.dataframe(state_table, use_container_width=True)
 
-    st.divider()
-
-    st.subheader("Descriptive Statistics")
-    num_df = filtered_df.select_dtypes(include="number")
-    if not num_df.empty:
-        st.dataframe(num_df.describe(), use_container_width=True)
-    else:
-        st.info("No numeric columns available for descriptive statistics.")
-
-    with st.expander("Filter Chain & Reset Guide"):
-        st.write("""
-        * **Date Picker**: Filters time-series data using custom start and end boundaries.
-        * **Multi-Select**: Filters categorical roles dynamically. Default includes all items.
-        * **Range Slider**: Sets numeric threshold boundaries.
-        * **Reset Button**: Restores all filters to default dataset scope in 1 click.
-        """)
-
-# Section 2: Trends
+# Section: Trends
 def render_trends(filtered_df):
     st.title("Trend Analysis")
-    st.header("Activity & Velocity Trends")
-    st.subheader("Reactive Time-Series Exploration")
-    
+    st.header("Activity Trends")
+
     commit_col = next((c for c in ["commits_count","commits","total_contributions"] if c in filtered_df.columns), filtered_df.select_dtypes(include=np.number).columns[0] if len(filtered_df.select_dtypes(include=np.number).columns) else None)
-    contributor_col = next((c for c in ["contributor_login","contributor_id"] if c in filtered_df.columns), filtered_df.columns[0])
     time_col   = next((c for c in ["timestamp","date","created_at"] if c in filtered_df.columns), None)
-    role_col   = next((c for c in ["contributor_role","role","branch"] if c in filtered_df.columns), None)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Commit Activity Over Time")
-        if time_col and commit_col:
-            df_t = filtered_df.copy()
-            df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
-            df_g = df_t.groupby(df_t[time_col].dt.date)[commit_col].sum().reset_index()
-            df_g.columns = ["date", "commits"]
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df_g["date"], y=df_g["commits"], mode="lines", fill="tozeroy", line=dict(color="#6366f1", width=2.5)))
-            fig.update_layout(**plot_layout("Filtered Daily Commit Trend"))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No timestamp column detected.")
+    if time_col and commit_col:
+        df_t = filtered_df.copy()
+        df_t[time_col] = pd.to_datetime(df_t[time_col], errors="coerce")
+        df_g = df_t.groupby(df_t[time_col].dt.date)[commit_col].sum().reset_index()
+        df_g.columns = ["date", "commits"]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df_g["date"], y=df_g["commits"], mode="lines", fill="tozeroy", line=dict(color="#6366f1", width=2.5)))
+        fig.update_layout(**plot_layout("Filtered Daily Commit Trend"))
+        st.plotly_chart(fig, use_container_width=True)
 
-    with col2:
-        st.subheader("Role Breakdown")
-        if role_col:
-            role_counts = filtered_df[role_col].value_counts().reset_index()
-            role_counts.columns = ["role", "count"]
-            fig = go.Figure(go.Pie(labels=role_counts["role"], values=role_counts["count"], hole=0.55, marker=dict(colors=PALETTE[:len(role_counts)])))
-            fig.update_layout(**plot_layout("Filtered Role Distribution", showlegend=False))
-            st.plotly_chart(fig, use_container_width=True)
-
-# Section 3: Data Explorer
+# Section: Data Explorer
 def render_explorer(filtered_df):
     st.title("Data Explorer")
-    st.header("Interactive Search & Export")
+    st.dataframe(filtered_df, use_container_width=True, height=350)
+    st.download_button("Download Filtered CSV", data=filtered_df.to_csv(index=False).encode("utf-8"), file_name="filtered_data.csv", mime="text/csv")
 
-    search_q = st.text_input("Search (keyword across all columns)", placeholder="Type to search...").strip().lower()
-    df_search = filtered_df.copy()
-    if search_q:
-        mask = df_search.astype(str).apply(lambda row: row.str.lower().str.contains(search_q).any(), axis=1)
-        df_search = df_search[mask]
-
-    st.subheader(f"Filtered Results ({len(df_search):,} records)")
-    st.dataframe(df_search, use_container_width=True, height=350)
-    st.download_button("Download Filtered CSV", data=df_search.to_csv(index=False).encode("utf-8"), file_name="filtered_data.csv", mime="text/csv")
-
-# Section 4: Insights Report
+# Section: Insights Report
 def render_insights(filtered_df):
     st.title("Business Insights Report")
-    st.header("Automated Intelligence Summary")
-
-    commit_col = next((c for c in ["commits_count","commits"] if c in filtered_df.columns), None)
-    review_col = next((c for c in ["avg_pr_review_days","pr_review_days","review_days"] if c in filtered_df.columns), None)
-
-    avg_review = round(filtered_df[review_col].mean(), 2) if review_col else None
-    pct_single = round((filtered_df[commit_col] == 1).mean() * 100, 1) if commit_col else None
-
-    ci1, ci2 = st.columns(2)
-    with ci1:
-        st.metric("Avg PR Review", f"{avg_review:.1f}d" if avg_review is not None else "N/A")
-    with ci2:
-        st.metric("Single-Commit Dropout %", f"{pct_single:.1f}%" if pct_single is not None else "N/A")
+    st.write(f"Active Workflow Context: Step {st.session_state['workflow_step']} | Selected Segment: {st.session_state['selected_segment']}")
 
 # Main Controller
 def main():
     page, filtered_df, full_df = render_sidebar()
     if page == "Overview":
         render_overview(filtered_df, full_df)
+    elif page == "Guided Workflow":
+        render_guided_workflow(full_df)
     elif page == "Trends":
         render_trends(filtered_df)
     elif page == "Data Explorer":
